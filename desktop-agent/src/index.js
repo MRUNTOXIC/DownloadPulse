@@ -3,6 +3,7 @@ const config = require('./config/config');
 const UniversalFileWatcher = require('./watcher/downloadWatcher');
 const notificationManager = require('./notifications/desktopNotification');
 const apiService = require('./services/apiService');
+const { startDesktopUIServer } = require('./ui/server');
 
 console.log(`========================================`);
 console.log(`  DownloadPulse Desktop Agent v1.0.0   `);
@@ -10,6 +11,9 @@ console.log(`========================================`);
 console.log(`[Config] Device ID: ${config.deviceId}`);
 console.log(`[Config] Hostname: ${config.deviceName}`);
 console.log(`[Config] Backend API: ${config.backendUrl}`);
+
+// Start Desktop App UI Server (accessible via browser window at http://localhost:5002)
+startDesktopUIServer();
 
 let lastState = null;
 
