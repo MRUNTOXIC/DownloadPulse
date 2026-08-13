@@ -1,0 +1,6 @@
+{
+  "name": "DownloadPulse",
+  "description": "Real-time Expo mobile client for DownloadPulse desktop file activity monitoring, USB transfers, and push notifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
