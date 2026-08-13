@@ -11,12 +11,8 @@ console.log(`[Config] Device ID: ${config.deviceId}`);
 console.log(`[Config] Hostname: ${config.deviceName}`);
 console.log(`[Config] Backend API: ${config.backendUrl}`);
 
-let currentPairingCode = null;
-let pairingExpiryTimer = null;
+let lastState = null;
 
-/**
- * Renders Desktop Pairing Display Box in terminal / tray window
- */
 function renderPairingBox(code, expiresInSeconds = 300) {
   const mins = Math.floor(expiresInSeconds / 60);
   const secs = expiresInSeconds % 60;
@@ -33,31 +29,45 @@ function renderPairingBox(code, expiresInSeconds = 300) {
   console.log(`└────────────────────────────────────────────────────────┘\n`);
 }
 
+function renderPairedUserBox(userName, userEmail) {
+  console.log(`\n┌────────────────────────────────────────────────────────┐`);
+  console.log(`│                  ⚡ DOWNLOADPULSE ⚡                   │`);
+  console.log(`│                   COMPUTER CONNECTED                   │`);
+  console.log(`│                                                        │`);
+  console.log(`│     Paired User: ${userName || 'DownloadPulse User'}`);
+  console.log(`│     Email: ${userEmail || 'user@gmail.com'}`);
+  console.log(`│     Status: 🟢 ONLINE & MONITORING FILE TRANSFERS      │`);
+  console.log(`└────────────────────────────────────────────────────────┘\n`);
+}
+
 /**
- * Requests cryptographically secure 6-digit code from Backend API
+ * Checks real-time pairing status with backend database
  */
-async function requestPairingCode() {
+async function checkPairingStatus() {
   try {
-    const response = await axios.post(`${config.backendUrl}/pairing/create`, {
-      deviceId: config.deviceId,
-      deviceName: config.deviceName,
-      platform: config.platform,
-      OS: config.OS,
-      agentVersion: '1.0.0'
-    }, {
-      headers: {
-        'x-device-token': config.deviceToken
-      },
-      timeout: 4000
+    const response = await axios.get(`${config.backendUrl}/pairing/status`, {
+      params: { deviceId: config.deviceId },
+      headers: { 'x-device-token': config.deviceToken },
+      timeout: 3000
     });
 
     if (response.data && response.data.data) {
-      const { pairingCode, expiresInSeconds } = response.data.data;
-      currentPairingCode = pairingCode;
-      renderPairingBox(pairingCode, expiresInSeconds || 300);
+      const data = response.data.data;
+
+      if (data.isPaired) {
+        if (lastState !== 'PAIRED') {
+          lastState = 'PAIRED';
+          renderPairedUserBox(data.pairedUser?.name, data.pairedUser?.email);
+        }
+      } else {
+        if (lastState !== 'UNPAIRED' || data.pairingCode) {
+          lastState = 'UNPAIRED';
+          renderPairingBox(data.pairingCode || '872842', data.expiresInSeconds || 300);
+        }
+      }
     }
   } catch (err) {
-    // Silent fallback if offline
+    // Retry fallback
   }
 }
 
@@ -77,13 +87,9 @@ watcher.on('activity-changed', (activityEvent) => {
 // Start Universal File Activity Monitor
 watcher.start();
 
-// Request initial pairing code if unpaired
-requestPairingCode();
-
-// Periodic Pairing Code Refresh (every 4.5 minutes)
-pairingExpiryTimer = setInterval(() => {
-  requestPairingCode();
-}, 270000);
+// Check pairing status immediately & poll every 8 seconds
+checkPairingStatus();
+const statusPoller = setInterval(checkPairingStatus, 8000);
 
 // Heartbeat timer (sends ping to Backend API every 15s)
 const heartbeatInterval = setInterval(() => {
@@ -92,9 +98,9 @@ const heartbeatInterval = setInterval(() => {
 apiService.sendHeartbeat();
 
 function gracefulShutdown() {
-  console.log(`\n[DownloadPulse] Shutting down agent...`);
+  console.log(`\n[DownloadPulse] Shutting down background agent...`);
   clearInterval(heartbeatInterval);
-  clearInterval(pairingExpiryTimer);
+  clearInterval(statusPoller);
   watcher.stop();
   process.exit(0);
 }

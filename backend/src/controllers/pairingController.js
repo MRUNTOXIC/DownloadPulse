@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const Pairing = require('../models/Pairing');
 const Device = require('../models/Device');
+const User = require('../models/User');
 
 function hashCode(code) {
   return crypto.createHash('sha256').update(code.toString()).digest('hex');
@@ -22,7 +23,6 @@ async function createPairingCode(req, res) {
       });
     }
 
-    // Upsert / verify Desktop Device record
     let deviceRecord;
     try {
       deviceRecord = await Device.findOneAndUpdate(
@@ -43,12 +43,10 @@ async function createPairingCode(req, res) {
       deviceRecord = { deviceId, deviceToken, deviceName: deviceName || 'Desktop Agent' };
     }
 
-    // Verify token matches if device already existed
     if (deviceRecord.deviceToken && deviceRecord.deviceToken !== deviceToken) {
       return res.status(401).json({ success: false, error: 'Invalid deviceToken authentication' });
     }
 
-    // Generate cryptographically secure 6-digit pairing code
     const rawCodeInt = crypto.randomInt(100000, 1000000);
     const pairingCode = rawCodeInt.toString();
     const pairingCodeHash = hashCode(pairingCode);
@@ -56,7 +54,6 @@ async function createPairingCode(req, res) {
     const pairingId = `pair_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    // Cancel old pending codes for this device
     try {
       await Pairing.updateMany({ deviceId, status: 'PENDING' }, { status: 'CANCELLED' });
       await Pairing.create({
@@ -88,8 +85,77 @@ async function createPairingCode(req, res) {
 }
 
 /**
+ * Queries real-time pairing status for Desktop Agent
+ * Returns user info if paired, or fresh 6-digit pairing code if unpaired
+ */
+async function getPairingStatus(req, res) {
+  try {
+    const deviceId = req.query.deviceId || req.body.deviceId;
+    const deviceToken = req.headers['x-device-token'] || req.query.deviceToken || req.body.deviceToken;
+
+    if (!deviceId) {
+      return res.status(400).json({ success: false, error: 'deviceId is required' });
+    }
+
+    let deviceRecord;
+    try {
+      deviceRecord = await Device.findOne({ deviceId });
+    } catch (e) {}
+
+    if (deviceRecord && deviceRecord.userId && deviceRecord.isPaired) {
+      let userRecord = null;
+      try {
+        userRecord = await User.findOne({ userId: deviceRecord.userId });
+      } catch (e) {}
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          isPaired: true,
+          pairedUser: userRecord ? {
+            name: userRecord.name,
+            email: userRecord.email
+          } : { name: 'DownloadPulse User', email: 'user@gmail.com' }
+        }
+      });
+    }
+
+    // Device is unpaired — generate a fresh 6-digit code!
+    const rawCodeInt = crypto.randomInt(100000, 1000000);
+    const pairingCode = rawCodeInt.toString();
+    const pairingCodeHash = hashCode(pairingCode);
+
+    const pairingId = `pair_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    try {
+      await Pairing.updateMany({ deviceId, status: 'PENDING' }, { status: 'CANCELLED' });
+      await Pairing.create({
+        pairingId,
+        deviceId,
+        pairingCodeHash,
+        userId: null,
+        expiresAt,
+        status: 'PENDING'
+      });
+    } catch (e) {}
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        isPaired: false,
+        pairedUser: null,
+        pairingCode,
+        expiresInSeconds: 300
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+/**
  * Mobile App user enters 6-digit code to pair desktop device to their user account
- * Requires Mobile User Authentication (req.userId)
  */
 async function verifyPairingCode(req, res) {
   try {
@@ -106,7 +172,6 @@ async function verifyPairingCode(req, res) {
 
     const codeHash = hashCode(pairingCode.toString().trim());
 
-    // Find valid pending pairing record
     let pairingRecord;
     try {
       pairingRecord = await Pairing.findOne({
@@ -123,13 +188,11 @@ async function verifyPairingCode(req, res) {
       });
     }
 
-    // 1-TIME USE ENFORCEMENT: Immediately mark PAIRED
     pairingRecord.status = 'PAIRED';
     pairingRecord.userId = userId;
     pairingRecord.usedAt = new Date();
     await pairingRecord.save();
 
-    // Link Desktop Device to User Account
     let updatedDevice;
     try {
       updatedDevice = await Device.findOneAndUpdate(
@@ -184,6 +247,7 @@ async function unpairDevice(req, res) {
 
 module.exports = {
   createPairingCode,
+  getPairingStatus,
   verifyPairingCode,
   unpairDevice
 };
