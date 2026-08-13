@@ -44,9 +44,19 @@ class UniversalFileWatcher extends EventEmitter {
     console.log(`[Universal Monitor] Watching target paths:`);
     this.monitoredPaths.forEach(p => console.log(`  - ${p}`));
 
-    const ignoreFn = (filePath) => {
+    const ignoreFn = (filePath, stats) => {
+      // 1. STRICT DIRECTORY IGNORE: Never crawl or watch folders or unzipped directories
+      if (stats && typeof stats.isDirectory === 'function' && stats.isDirectory()) {
+        return true;
+      }
+      try {
+        if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+          return true;
+        }
+      } catch (e) {}
+
       const base = path.basename(filePath);
-      // Ignore directories & system noise files
+      // 2. NOISE FILTER: System noise files
       return this.ignoredFilesAndDirs.some(ignored =>
         base === ignored || filePath.includes(path.sep + ignored + path.sep) || filePath.endsWith(path.sep + ignored)
       );
@@ -60,7 +70,7 @@ class UniversalFileWatcher extends EventEmitter {
           ignored: ignoreFn,
           ignoreInitial: true,
           persistent: true,
-          depth: 2
+          depth: 0 // Top-level files ONLY. Never enter unzipped subfolders!
         });
 
         watcher.on('add', (filePath) => this._handlePathEvent(filePath, 'ADD'));
@@ -76,12 +86,11 @@ class UniversalFileWatcher extends EventEmitter {
   }
 
   _handlePathEvent(filePath, eventType) {
-    // 1. STRICT DIRECTORY CHECK: Ignore directories instantly!
+    // 1. STRICT DIRECTORY CHECK: Ignore folders and unzipped directories instantly!
     try {
       if (fs.existsSync(filePath)) {
         const stat = fs.statSync(filePath);
         if (stat.isDirectory()) {
-          // DIRECTORY ➔ IGNORE (Never create activity cards for folders)
           return;
         }
       }
@@ -91,26 +100,31 @@ class UniversalFileWatcher extends EventEmitter {
 
     const filename = path.basename(filePath);
 
-    // 2. NOISE FILTER: Ignore system files (.DS_Store, Thumbs.db, etc.)
+    // 2. NOISE FILTER: Ignore system files
     if (this.ignoredFilesAndDirs.includes(filename)) {
+      return;
+    }
+
+    // 3. STRICT EXTENSION RULE: Must have a valid file extension (.zip, .pdf, .mp4, .png, etc.)
+    const ext = path.extname(filePath).toLowerCase();
+    if (!ext || ext.trim() === '') {
+      // Plain file/folder without extension ➔ IGNORE!
       return;
     }
 
     if (this.completedFiles.has(filePath)) return;
 
-    const ext = path.extname(filePath).toLowerCase();
     const isTemp = this.tempExtensions.includes(ext);
 
-    // 3. TEMP FILE INTERNALS TRACKING
+    // 4. TEMP FILE INTERNALS TRACKING (.crdownload, .tmp, .part)
     if (isTemp) {
-      // Internal tracking only — DO NOT emit user-facing "COMPLETED" activity for temporary files
       const baseNameWithoutTemp = filename.substring(0, filename.lastIndexOf('.'));
       this.tempFileMapping.set(filePath, baseNameWithoutTemp);
       this._trackTempProgress(filePath);
       return;
     }
 
-    // 4. ORDINARY FILE CREATION VS DOWNLOAD/COPY HEURISTIC
+    // 5. ORDINARY FILE CREATION VS DOWNLOAD/COPY HEURISTIC
     const isDownloadFolder = filePath.toLowerCase().startsWith(this.downloadsDir.toLowerCase());
     const isUsbOrExternal = filePath.includes('USB') || (getDrivePrefix(filePath) && getDrivePrefix(filePath) !== getDrivePrefix(this.downloadsDir));
 
@@ -176,7 +190,6 @@ class UniversalFileWatcher extends EventEmitter {
     const isTemp = this.tempExtensions.includes(ext);
 
     if (isTemp) {
-      // Temp download file was deleted / vanished before target completed ➔ FAILED (CANCELLED)
       const baseName = this.tempFileMapping.get(filePath) || path.basename(filePath);
       console.log(`\n[DOWNLOAD FAILED / CANCELLED] Temp file deleted: ${path.basename(filePath)}`);
 
@@ -204,7 +217,6 @@ class UniversalFileWatcher extends EventEmitter {
       return;
     }
 
-    // Regular file unlinked during active copy
     for (const [key, activity] of this.activeActivities.entries()) {
       if (activity.destination === filePath && activity.status !== 'COMPLETED') {
         activity.status = 'FAILED';

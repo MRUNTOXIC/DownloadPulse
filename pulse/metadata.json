@@ -1,0 +1,6 @@
+{
+  "name": "PULSE",
+  "description": "Luxury cross-device background sync engine connecting MacBook IDE environments with instant mobile notifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
