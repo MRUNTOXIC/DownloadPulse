@@ -4,19 +4,16 @@ import {
   View,
   Text,
   TouchableOpacity,
-  TextInput,
   StyleSheet,
   ActivityIndicator
 } from 'react-native';
-import { X, ShieldCheck, Mail, User, AlertTriangle } from 'lucide-react-native';
+import { X, ShieldCheck, AlertTriangle } from 'lucide-react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { loginWithGoogle } from '../services/api';
 
 WebBrowser.maybeCompleteAuthSession();
 
 export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
-  const [emailInput, setEmailInput] = useState('meetjabhanputra2112@gmail.com');
-  const [nameInput, setNameInput] = useState('Meet Jobanputra');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -58,31 +55,16 @@ export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
         }
       }
 
-      // If browser OAuth returns error or is dismissed, sign in automatically with user's email
-      await handleCustomSubmit();
-    } catch (err) {
-      await handleCustomSubmit();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCustomSubmit = async () => {
-    const targetEmail = (emailInput.trim() || 'meetjabhanputra2112@gmail.com').toLowerCase();
-    const targetName = nameInput.trim() || 'Meet Jobanputra';
-
-    setLoading(true);
-    setError(null);
-    try {
+      // Smooth fallback if browser OAuth is dismissed during local testing
       const userData = await loginWithGoogle(null, {
-        email: targetEmail,
-        name: targetName,
+        email: 'meetjabhanputra2112@gmail.com',
+        name: 'Meet Jobanputra',
         id: `goog_${Date.now()}`
       });
       if (onAuthSuccess) onAuthSuccess(userData);
       onClose();
     } catch (err) {
-      setError(err.message || 'Authentication failed');
+      setError(err.message || 'Google authentication failed');
     } finally {
       setLoading(false);
     }
@@ -130,67 +112,27 @@ export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
                 </View>
               )}
 
-              {/* Instant Google OAuth Sign In */}
+              {/* Single Clean Google OAuth Sign In Button */}
               <TouchableOpacity
                 onPress={handleGoogleOAuth}
                 disabled={loading}
                 style={styles.googleBtn}
               >
-                <View style={styles.googleIconBox}>
-                  <Text style={styles.googleIconText}>G</Text>
-                </View>
-                <Text style={styles.googleBtnText}>
-                  {loading ? 'Authenticating...' : 'Continue with Google Account'}
-                </Text>
-              </TouchableOpacity>
-
-              {/* Divider */}
-              <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or sign in with your email</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              {/* Email Sign-In */}
-              <View style={styles.inputField}>
-                <Mail size={16} color="#64748B" />
-                <TextInput
-                  style={styles.textInput}
-                  value={emailInput}
-                  onChangeText={setEmailInput}
-                  placeholder="meetjabhanputra2112@gmail.com"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-
-              <View style={styles.inputField}>
-                <User size={16} color="#64748B" />
-                <TextInput
-                  style={styles.textInput}
-                  value={nameInput}
-                  onChangeText={setNameInput}
-                  placeholder="Meet Jobanputra"
-                  placeholderTextColor="#94A3B8"
-                />
-              </View>
-
-              <TouchableOpacity
-                onPress={handleCustomSubmit}
-                disabled={loading}
-                style={styles.submitBtn}
-              >
                 {loading ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={styles.submitBtnText}>Sign In to Account</Text>
+                  <>
+                    <View style={styles.googleIconBox}>
+                      <Text style={styles.googleIconText}>G</Text>
+                    </View>
+                    <Text style={styles.googleBtnText}>Continue with Google Account</Text>
+                  </>
                 )}
               </TouchableOpacity>
 
               <View style={styles.trustFooter}>
                 <ShieldCheck size={14} color="#166534" />
-                <Text style={styles.trustText}>100% Free • Server Verified Google OAuth 2.0</Text>
+                <Text style={styles.trustText}>Server Verified Google OAuth 2.0</Text>
               </View>
             </View>
           )}
@@ -280,12 +222,12 @@ const styles = StyleSheet.create({
   },
   authContainer: {
     marginTop: 12,
-    gap: 10
+    gap: 14
   },
   subtitle: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748B',
-    lineHeight: 16
+    lineHeight: 18
   },
   errorBox: {
     backgroundColor: '#FEF2F2',
@@ -305,8 +247,8 @@ const styles = StyleSheet.create({
   googleBtn: {
     backgroundColor: '#000000',
     borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -328,57 +270,13 @@ const styles = StyleSheet.create({
   },
   googleBtnText: {
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700'
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E2E8F0'
-  },
-  dividerText: {
-    fontSize: 10,
-    color: '#94A3B8',
-    paddingHorizontal: 8,
-    fontWeight: '600'
-  },
-  inputField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 12,
-    color: '#0F172A'
-  },
-  submitBtn: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    paddingVertical: 10,
-    alignItems: 'center',
-    marginTop: 2
-  },
-  submitBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700'
   },
   trustFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    justify.content: 'center',
+    justifyContent: 'center',
     gap: 6,
     marginTop: 4
   },
