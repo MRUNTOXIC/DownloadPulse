@@ -841,7 +841,7 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justify.content: 'space-between'
+    justifyContent: 'space-between'
   },
   infoKey: {
     fontSize: 10,
