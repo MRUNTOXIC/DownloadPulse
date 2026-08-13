@@ -1,0 +1,25 @@
+{
+  "name": "downloadpulse-desktop-agent",
+  "version": "1.0.0",
+  "description": "Windows download watcher and notification service for DownloadPulse",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "simulate-download": "node src/utils/simulateDownload.js",
+    "simulate-activity": "node src/utils/simulateActivity.js"
+  },
+  "keywords": [
+    "downloadpulse",
+    "watcher",
+    "desktop-agent",
+    "windows"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "chokidar": "^3.6.0",
+    "dotenv": "^16.4.5",
+    "node-notifier": "^10.0.1"
+  }
+}

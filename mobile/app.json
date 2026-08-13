@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "DownloadPulse",
+    "slug": "downloadpulse-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A"
+      }
+    },
+    "web": {
+      "backgroundColor": "#0F172A"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "downloadpulse-root",
+  "version": "1.0.0",
+  "description": "Universal Windows-to-Mobile file activity notification system",
+  "main": "start-all.js",
+  "scripts": {
+    "start": "node start-all.js",
+    "dev": "node start-all.js",
+    "website": "cd website && npm run dev",
+    "simulate-activity": "cd desktop-agent && npm run simulate-activity"
+  },
+  "keywords": [
+    "downloadpulse",
+    "watcher",
+    "react-native",
+    "expo",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0"
+  }
+}
