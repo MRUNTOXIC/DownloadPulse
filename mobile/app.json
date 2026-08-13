@@ -18,6 +18,9 @@
     },
     "web": {
       "backgroundColor": "#0F172A"
-    }
+    },
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }

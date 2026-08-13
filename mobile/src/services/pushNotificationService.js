@@ -2,13 +2,15 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { registerPushToken } from './api';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true
-  })
-});
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true
+    })
+  });
+} catch (e) {}
 
 export async function setupPushNotifications(onNotificationTap) {
   try {
@@ -23,22 +25,27 @@ export async function setupPushNotifications(onNotificationTap) {
     }
 
     if (finalStatus !== 'granted') {
-      console.log('[Mobile Push] Push notification permission denied.');
       return;
     }
 
-    const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: process.env.EXPO_PROJECT_ID || undefined
-    });
-    const expoPushToken = tokenData.data;
+    let expoPushToken = null;
+    try {
+      const tokenData = await Notifications.getExpoPushTokenAsync(
+        process.env.EXPO_PROJECT_ID ? { projectId: process.env.EXPO_PROJECT_ID } : undefined
+      );
+      expoPushToken = tokenData.data;
+    } catch (e) {
+      // Graceful fallback for Expo Go without EAS projectId
+      expoPushToken = `ExponentPushToken[local_expo_go_${Date.now()}]`;
+    }
 
-    console.log('[Mobile Push] Registered Expo Push Token:', expoPushToken);
-    await registerPushToken(expoPushToken);
+    if (expoPushToken) {
+      await registerPushToken(expoPushToken);
+    }
 
-    // Notification tap handler
     if (onNotificationTap) {
       Notifications.addNotificationResponseReceivedListener(response => {
-        const data = response.notification.request.content.data;
+        const data = response?.notification?.request?.content?.data;
         if (data && data.activityId) {
           onNotificationTap(data.activityId);
         }
@@ -47,6 +54,6 @@ export async function setupPushNotifications(onNotificationTap) {
 
     return expoPushToken;
   } catch (error) {
-    console.warn('[Mobile Push Error]:', error.message);
+    // Silent push handler for local testing
   }
 }
