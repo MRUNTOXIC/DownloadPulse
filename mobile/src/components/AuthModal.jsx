@@ -24,7 +24,7 @@ export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
     setLoading(true);
     setError(null);
     try {
-      const clientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || 'downloadpulse-google-client-id.apps.googleusercontent.com';
+      const clientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '48335086223-n4cda2v9hiegghtsrrne1a3krmn0brnn.apps.googleusercontent.com';
       const redirectUri = 'https://auth.expo.io/@anonymous/downloadpulse-mobile';
       
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
