@@ -13,317 +13,343 @@
       margin: 0;
       padding: 0;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      user-select: none;
     }
     body {
-      background-color: #0F172A;
-      color: #F8FAFC;
+      background-color: #F3F4F6;
+      color: #0F172A;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .app-container {
-      width: 100%;
-      max-width: 480px;
-      background: #1E293B;
-      border: 1px solid #334155;
-      border-radius: 24px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      flex-direction: column;
+      height: 100vh;
       overflow: hidden;
     }
-    .header {
-      padding: 20px;
-      border-bottom: 1px solid #334155;
+    /* Native Window Header Bar */
+    .title-bar {
+      height: 38px;
+      background: #FFFFFF;
+      border-bottom: 1px solid #E2E8F0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      -webkit-app-region: drag;
+    }
+    .brand-title-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .brand-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0F172A;
+      letter-spacing: -0.3px;
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #22C55E;
+      box-shadow: 0 0 8px #22C55E;
+    }
+    .header-device-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748B;
+      background: #F1F5F9;
+      padding: 2px 8px;
+      border-radius: 99px;
+      border: 1px solid #E2E8F0;
+    }
+    .scroll-content {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    /* Mobile-Theme White Cards */
+    .card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #0F172A;
     }
-    .brand-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .logo-badge {
-      width: 36px;
-      height: 36px;
-      background: #000000;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-    }
-    .title {
-      font-size: 18px;
+    .card-title {
+      font-size: 13px;
       font-weight: 800;
-      color: #FFFFFF;
-      letter-spacing: -0.5px;
+      color: #0F172A;
     }
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: #22C55E;
-      box-shadow: 0 0 10px #22C55E;
-    }
-    .device-chip {
+    .card-subtitle {
       font-size: 11px;
-      color: #94A3B8;
-      background: #1E293B;
-      border: 1px solid #334155;
-      padding: 4px 10px;
-      border-radius: 99px;
-      font-weight: 600;
+      color: #64748B;
+      margin-top: 2px;
     }
-    .content {
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .card {
-      background: #0F172A;
-      border: 1px solid #334155;
-      border-radius: 20px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 12px;
-    }
-    .pairing-title {
-      font-size: 12px;
-      font-weight: 800;
-      color: #94A3B8;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .code-box {
-      font-size: 40px;
-      font-weight: 900;
-      letter-spacing: 8px;
-      color: #FFFFFF;
-      background: #1E293B;
-      border: 2px solid #3B82F6;
-      padding: 12px 24px;
-      border-radius: 16px;
-      width: 100%;
-      margin: 4px 0;
-      box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
-    }
-    .expiry-text {
-      font-size: 12px;
-      color: #38BDF8;
-      font-weight: 600;
-    }
-    .instructions {
-      font-size: 12px;
-      color: #94A3B8;
-      line-height: 1.5;
-    }
-    .user-profile-box {
-      width: 100%;
-      background: #1E293B;
-      border: 1px solid #334155;
+    /* 6-Digit Pairing Code Display Box */
+    .pairing-box {
+      background: #F8FAFC;
+      border: 2px dashed #000000;
       border-radius: 16px;
       padding: 16px;
+      text-align: center;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      text-align: left;
-    }
-    .user-name {
-      font-size: 16px;
-      font-weight: 800;
-      color: #FFFFFF;
-    }
-    .user-email {
-      font-size: 12px;
-      color: #94A3B8;
-    }
-    .status-pill {
-      display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 10px;
-      font-weight: 800;
-      color: #22C55E;
-      background: rgba(34, 197, 94, 0.1);
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      padding: 4px 10px;
-      border-radius: 99px;
-      width: fit-content;
-      margin-top: 4px;
     }
-    .paths-card {
-      background: #0F172A;
-      border: 1px solid #334155;
-      border-radius: 16px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .section-label {
+    .pairing-label {
       font-size: 10px;
       font-weight: 800;
       color: #64748B;
       letter-spacing: 0.5px;
     }
-    .path-item {
-      font-size: 11px;
+    .pairing-code {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 6px;
+      color: #000000;
       font-family: monospace;
-      color: #38BDF8;
-      background: #1E293B;
-      padding: 6px 10px;
-      border-radius: 8px;
-      word-break: break-all;
     }
-    .activity-feed {
-      background: #0F172A;
-      border: 1px solid #334155;
+    .pairing-timer {
+      font-size: 11px;
+      font-weight: 700;
+      color: #2563EB;
+      background: #EFF6FF;
+      padding: 2px 10px;
+      border-radius: 99px;
+      border: 1px solid #BFDBFE;
+    }
+    .instructions {
+      font-size: 11px;
+      color: #475569;
+      text-align: center;
+      line-height: 16px;
+    }
+    /* Paired Connected User Box */
+    .user-profile-box {
+      background: #F0FDF4;
+      border: 1px solid #DCFCE7;
       border-radius: 16px;
       padding: 14px;
       display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .avatar-box {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #000000;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .user-info {
+      display: flex;
       flex-direction: column;
-      gap: 8px;
-      max-height: 180px;
+      gap: 2px;
+      flex: 1;
+    }
+    .user-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0F172A;
+    }
+    .user-email {
+      font-size: 11px;
+      color: #64748B;
+    }
+    .online-pill {
+      font-size: 9px;
+      font-weight: 800;
+      color: #15803D;
+      text-transform: uppercase;
+    }
+    /* Section Labels */
+    .section-title {
+      font-size: 10px;
+      font-weight: 800;
+      color: #94A3B8;
+      letter-spacing: 0.5px;
+    }
+    /* Path Items */
+    .paths-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .path-pill {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-family: monospace;
+      color: #334155;
+    }
+    /* Activity Feed Logs */
+    .activity-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 160px;
       overflow-y: auto;
     }
-    .feed-item {
+    .feed-card {
+      background: #F8FAFC;
+      border: 1px solid #F1F5F9;
+      padding: 8px 10px;
+      border-radius: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px;
-      background: #1E293B;
-      border-radius: 10px;
+    }
+    .feed-filename {
       font-size: 11px;
-    }
-    .feed-name {
       font-weight: 700;
-      color: #F8FAFC;
+      color: #0F172A;
     }
-    .feed-badge {
+    .feed-status {
       font-size: 9px;
       font-weight: 800;
+      color: #15803D;
+      background: #DCFCE7;
       padding: 2px 6px;
       border-radius: 6px;
-      background: #22C55E;
-      color: #000000;
     }
     .footer {
-      padding: 12px 20px;
-      background: #0F172A;
-      border-top: 1px solid #334155;
-      font-size: 10px;
-      color: #64748B;
-      text-align: center;
+      background: #FFFFFF;
+      border-top: 1px solid #E2E8F0;
+      padding: 10px 16px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: #94A3B8;
     }
   </style>
 </head>
 <body>
-  <div class="app-container">
-    <div class="header">
-      <div class="brand-row">
-        <div class="logo-badge">⚡</div>
+  <!-- Title Bar -->
+  <div class="title-bar">
+    <div class="brand-title-row">
+      <span class="brand-name">DownloadPulse ⚡</span>
+      <div class="pulse-dot"></div>
+    </div>
+    <div class="header-device-badge" id="hostnameChip">Meets-MacBook-Air</div>
+  </div>
+
+  <!-- Content Canvas -->
+  <div class="scroll-content">
+    
+    <!-- Pairing / Connected Card -->
+    <div class="card" id="statusCard">
+      <div class="card-header">
         <div>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span class="title">DownloadPulse</span>
-            <div class="pulse-dot"></div>
-          </div>
-          <span style="font-size:10px; color:#94A3B8;">Desktop Background Agent</span>
+          <div class="card-title">Computer Pairing Status</div>
+          <div class="card-subtitle">Desktop Background Watcher Agent</div>
         </div>
       </div>
-      <div class="device-chip" id="hostnameChip">PC Agent</div>
+
+      <div id="statusBody">
+        <div class="pairing-box">
+          <span class="pairing-label">ENTER 6-DIGIT CODE IN MOBILE APP</span>
+          <div class="pairing-code" id="codeDisplay">------</div>
+          <span class="pairing-timer" id="timerDisplay">Expires in 05:00 min</span>
+        </div>
+        <p class="instructions" style="margin-top:8px;">
+          Open <strong>DownloadPulse Mobile App</strong> ➔ Tap <strong>"Pair PC"</strong> ➔ Enter the 6-digit code above to connect.
+        </p>
+      </div>
     </div>
 
-    <div class="content">
-      <!-- Main Status Card -->
-      <div class="card" id="mainCard">
-        <div class="pairing-title">PAIR THIS COMPUTER</div>
-        <div class="code-box" id="codeDisplay">------</div>
-        <div class="expiry-text" id="timerDisplay">Expires in 05:00 min</div>
-        <div class="instructions">
-          Open <strong>DownloadPulse Mobile App</strong> ➔ Tap <strong>"Pair PC"</strong> ➔ Enter the 6-digit code above.
-        </div>
+    <!-- Storage Paths Monitored -->
+    <div class="card">
+      <span class="section-title">MONITORED DESKTOP STORAGE PATHS</span>
+      <div class="paths-container" id="pathsContainer">
+        <div class="path-pill">~/Downloads</div>
       </div>
+    </div>
 
-      <!-- Monitored Paths -->
-      <div class="paths-card">
-        <span class="section-label">MONITORED STORAGE PATHS</span>
-        <div id="pathsList">
-          <div class="path-item">~/Downloads</div>
-        </div>
-      </div>
-
-      <!-- Live Activity Log -->
-      <div class="activity-feed">
-        <span class="section-label">LIVE DESKTOP ACTIVITY MONITOR</span>
-        <div id="activityLogs">
-          <div class="feed-item">
-            <span class="feed-name">Universal Monitor Active</span>
-            <span class="feed-badge">ONLINE</span>
-          </div>
+    <!-- Live Activity Logs -->
+    <div class="card">
+      <span class="section-title">LIVE FILE ACTIVITY MONITOR</span>
+      <div class="activity-feed" id="activityFeed">
+        <div class="feed-card">
+          <span class="feed-filename">Universal Watcher Active</span>
+          <span class="feed-status">ONLINE</span>
         </div>
       </div>
     </div>
 
-    <div class="footer">
-      <span>Device ID: <span id="deviceIdDisplay" style="color:#94A3B8;">dev_...</span></span>
-      <span>v1.0.0 • Secured</span>
-    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Device ID: <span id="deviceIdText">dev_...</span></span>
+    <span>v1.0.0 • Native Desktop Agent</span>
   </div>
 
   <script>
-    async function updateStatus() {
+    async function syncStatus() {
       try {
         const res = await fetch('/api/status');
         const json = await res.json();
         const data = json.data;
 
-        document.getElementById('hostnameChip').innerText = data.hostname || 'PC Agent';
-        document.getElementById('deviceIdDisplay').innerText = (data.deviceId || '').substring(0, 16) + '...';
+        document.getElementById('hostnameChip').innerText = data.hostname || 'Desktop Agent';
+        document.getElementById('deviceIdText').innerText = (data.deviceId || '').substring(0, 16) + '...';
 
-        const mainCard = document.getElementById('mainCard');
+        const body = document.getElementById('statusBody');
+
         if (data.isPaired) {
-          mainCard.innerHTML = `
-            <div class="status-pill">🟢 COMPUTER CONNECTED & SECURED</div>
+          body.innerHTML = `
             <div class="user-profile-box">
-              <span style="font-size:10px; font-weight:800; color:#64748B;">PAIRED GOOGLE ACCOUNT</span>
-              <div class="user-name">${data.pairedUser ? data.pairedUser.name : 'DownloadPulse User'}</div>
-              <div class="user-email">${data.pairedUser ? data.pairedUser.email : 'user@gmail.com'}</div>
-            </div>
-            <div class="instructions">
-              Activity events on this PC are syncing in real-time to your mobile device.
+              <div class="avatar-box">${data.pairedUser ? data.pairedUser.name.charAt(0) : 'U'}</div>
+              <div class="user-info">
+                <span class="user-name">${data.pairedUser ? data.pairedUser.name : 'DownloadPulse User'}</span>
+                <span class="user-email">${data.pairedUser ? data.pairedUser.email : 'user@gmail.com'}</span>
+                <span class="online-pill">🟢 CONNECTED & MONITORING FILE TRANSFERS</span>
+              </div>
             </div>
           `;
         } else {
-          mainCard.innerHTML = `
-            <div class="pairing-title">PAIR THIS COMPUTER</div>
-            <div class="code-box">${data.pairingCode || '------'}</div>
-            <div class="expiry-text">Expires in ${Math.floor((data.expiresInSeconds || 300) / 60)}:00 min</div>
-            <div class="instructions">
-              Open <strong>DownloadPulse Mobile App</strong> ➔ Tap <strong>"Pair PC"</strong> ➔ Enter code.
+          const mins = Math.floor((data.expiresInSeconds || 300) / 60);
+          body.innerHTML = `
+            <div class="pairing-box">
+              <span class="pairing-label">ENTER 6-DIGIT CODE IN MOBILE APP</span>
+              <div class="pairing-code">${data.pairingCode || '------'}</div>
+              <span class="pairing-timer">Expires in 0${mins}:00 min</span>
             </div>
+            <p class="instructions" style="margin-top:8px;">
+              Open <strong>DownloadPulse Mobile App</strong> ➔ Tap <strong>"Pair PC"</strong> ➔ Enter the code to connect.
+            </p>
           `;
         }
 
         if (data.monitoredPaths && data.monitoredPaths.length) {
-          document.getElementById('pathsList').innerHTML = data.monitoredPaths
-            .map(p => `<div class="path-item">${p}</div>`)
+          document.getElementById('pathsContainer').innerHTML = data.monitoredPaths
+            .map(p => `<div class="path-pill">${p}</div>`)
             .join('');
         }
       } catch (e) {}
     }
 
-    setInterval(updateStatus, 3000);
-    updateStatus();
+    setInterval(syncStatus, 3000);
+    syncStatus();
   </script>
 </body>
 </html>

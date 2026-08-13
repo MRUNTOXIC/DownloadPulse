@@ -1,10 +1,11 @@
 {
   "name": "downloadpulse-desktop-agent",
   "version": "1.0.0",
-  "description": "Windows download watcher and notification service for DownloadPulse",
-  "main": "src/index.js",
+  "description": "Windows and Mac download watcher and notification agent with native desktop UI",
+  "main": "src/electron-main.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "electron .",
+    "agent-cli": "node src/index.js",
     "simulate-download": "node src/utils/simulateDownload.js",
     "simulate-activity": "node src/utils/simulateActivity.js"
   },
@@ -12,7 +13,8 @@
     "downloadpulse",
     "watcher",
     "desktop-agent",
-    "windows"
+    "windows",
+    "mac"
   ],
   "author": "",
   "license": "ISC",
@@ -21,5 +23,8 @@
     "chokidar": "^3.6.0",
     "dotenv": "^16.4.5",
     "node-notifier": "^10.0.1"
+  },
+  "devDependencies": {
+    "electron": "^41.7.1"
   }
 }
