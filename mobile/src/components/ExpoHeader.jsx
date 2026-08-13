@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#000000',
     alignItems: 'center',
-    justify.content: 'center'
+    justifyContent: 'center'
   },
   avatarText: {
     color: '#FFFFFF',
