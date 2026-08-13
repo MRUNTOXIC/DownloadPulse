@@ -6,9 +6,19 @@ const fileActivitySchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  userId: {
+    type: String,
+    default: null,
+    index: true
+  },
+  deviceId: {
+    type: String,
+    default: null,
+    index: true
+  },
   activityType: {
     type: String,
-    enum: ['DOWNLOAD', 'FILE_COPY', 'FILE_MOVE', 'FILE_CREATE', 'FILE_EXTRACT', 'UNKNOWN'],
+    enum: ['DOWNLOAD', 'FILE_COPY', 'FILE_MOVE', 'FILE_CREATE', 'FILE_EXTRACT', 'USB_TRANSFER', 'UNKNOWN'],
     default: 'UNKNOWN'
   },
   status: {
@@ -19,6 +29,10 @@ const fileActivitySchema = new mongoose.Schema({
   filename: {
     type: String,
     required: true
+  },
+  extension: {
+    type: String,
+    default: ''
   },
   size: {
     type: Number,
@@ -55,6 +69,14 @@ const fileActivitySchema = new mongoose.Schema({
   reason: {
     type: String,
     default: null
+  },
+  failureReason: {
+    type: String,
+    default: null
+  },
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
   }
 }, { timestamps: true });
 

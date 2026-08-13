@@ -1,117 +1,140 @@
 const FileActivity = require('../models/FileActivity');
-const { getIsConnected } = require('../config/db');
-const { sendMobilePushNotification } = require('../services/pushService');
+const { sendPushNotification } = require('../services/pushNotificationService');
 
-// In-memory fallback repository when MongoDB daemon is not running locally
-const inMemoryActivities = new Map();
+// In-Memory Activity Store Fallback
+const memoryActivities = new Map();
 
-/**
- * Creates or updates a file activity state
- */
-exports.createOrUpdateActivity = async (req, res) => {
+async function syncActivity(req, res) {
   try {
-    const activityData = req.body;
-    const { activityId } = activityData;
+    const {
+      activityId,
+      activityType,
+      status,
+      filename,
+      extension,
+      size,
+      fileSize,
+      source,
+      destination,
+      sourceDrive,
+      destinationDrive,
+      timestamp,
+      device,
+      reason,
+      failureReason,
+      metadata
+    } = req.body;
 
-    if (!activityId) {
-      return res.status(400).json({ success: false, message: 'activityId is required' });
+    if (!activityId || !filename) {
+      return res.status(400).json({ success: false, error: 'activityId and filename are required' });
     }
 
-    let savedActivity = null;
+    const userId = req.userId || null;
+    const deviceId = req.body.deviceId || null;
 
-    if (getIsConnected()) {
-      savedActivity = await FileActivity.findOneAndUpdate(
+    const payload = {
+      activityId,
+      userId,
+      deviceId,
+      activityType: activityType || 'UNKNOWN',
+      status: status || 'STARTED',
+      filename,
+      extension: extension || (filename.includes('.') ? filename.split('.').pop() : ''),
+      size: size || 0,
+      fileSize: fileSize || '0 B',
+      source: source || null,
+      destination: destination || null,
+      sourceDrive: sourceDrive || null,
+      destinationDrive: destinationDrive || null,
+      timestamp: timestamp ? new Date(timestamp) : new Date(),
+      device: device || 'Windows PC',
+      reason: reason || failureReason || null,
+      failureReason: failureReason || reason || null,
+      metadata: metadata || {}
+    };
+
+    let activityRecord;
+    try {
+      activityRecord = await FileActivity.findOneAndUpdate(
         { activityId },
-        { $set: activityData },
+        payload,
         { upsert: true, new: true }
       );
-    } else {
-      const existing = inMemoryActivities.get(activityId) || {};
-      savedActivity = { ...existing, ...activityData, updatedAt: new Date().toISOString() };
-      inMemoryActivities.set(activityId, savedActivity);
+    } catch (dbErr) {
+      memoryActivities.set(activityId, payload);
+      activityRecord = payload;
     }
 
-    // Trigger Mobile Push Notification if state complete/failed
-    sendMobilePushNotification(savedActivity);
+    // Trigger Mobile Push Notification asynchronously
+    sendPushNotification(payload).catch(() => {});
 
-    return res.status(200).json({
+    console.log(`[BACKEND ACTIVITY SYNC] [${payload.status}] ${payload.filename} (${payload.fileSize})`);
+
+    res.status(200).json({
       success: true,
       message: 'Activity synced successfully',
-      data: savedActivity
+      data: activityRecord
     });
   } catch (error) {
-    console.error('[Activity Controller Error]:', error.message);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('[Activity Sync Error]:', error.message);
+    res.status(500).json({ success: false, error: error.message });
   }
-};
+}
 
-/**
- * Retrieves file activity feed with searching and filtering support
- */
-exports.getActivities = async (req, res) => {
+async function getActivities(req, res) {
   try {
-    const { q, type, status, limit = 50 } = req.query;
+    const { type, status, q } = req.query;
+    const filter = {};
 
-    let activities = [];
+    if (req.userId) {
+      filter.$or = [{ userId: req.userId }, { userId: null }];
+    }
 
-    if (getIsConnected()) {
-      const filter = {};
-      if (type && type !== 'ALL') filter.activityType = type;
-      if (status && status !== 'ALL') filter.status = status;
-      if (q) {
-        filter.filename = { $regex: q, $options: 'i' };
-      }
+    if (type && type !== 'ALL') {
+      filter.activityType = type;
+    }
 
-      activities = await FileActivity.find(filter)
-        .sort({ timestamp: -1 })
-        .limit(parseInt(limit, 10));
-    } else {
-      activities = Array.from(inMemoryActivities.values());
+    if (status && status !== 'ALL') {
+      filter.status = status;
+    }
+
+    if (q) {
+      filter.filename = { $regex: q, $options: 'i' };
+    }
+
+    try {
+      const activities = await FileActivity.find(filter).sort({ timestamp: -1 }).limit(100);
+      return res.status(200).json({
+        success: true,
+        data: activities
+      });
+    } catch (dbErr) {
+      let list = Array.from(memoryActivities.values());
+
       if (type && type !== 'ALL') {
-        activities = activities.filter(a => a.activityType === type);
+        list = list.filter(a => a.activityType === type);
       }
       if (status && status !== 'ALL') {
-        activities = activities.filter(a => a.status === status);
+        list = list.filter(a => a.status === status);
       }
       if (q) {
-        const queryLower = q.toLowerCase();
-        activities = activities.filter(a => a.filename && a.filename.toLowerCase().includes(queryLower));
+        list = list.filter(a => a.filename.toLowerCase().includes(q.toLowerCase()));
       }
-      activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      activities = activities.slice(0, parseInt(limit, 10));
-    }
 
-    return res.status(200).json({
-      success: true,
-      count: activities.length,
-      data: activities
-    });
+      list.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      return res.status(200).json({
+        success: true,
+        data: list
+      });
+    }
   } catch (error) {
-    console.error('[Activity Controller Error]:', error.message);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error('[Get Activities Error]:', error.message);
+    res.status(500).json({ success: false, error: error.message });
   }
-};
+}
 
-/**
- * Get single activity by ID
- */
-exports.getActivityById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    let activity = null;
-
-    if (getIsConnected()) {
-      activity = await FileActivity.findOne({ activityId: id });
-    } else {
-      activity = inMemoryActivities.get(id);
-    }
-
-    if (!activity) {
-      return res.status(404).json({ success: false, message: 'Activity not found' });
-    }
-
-    return res.status(200).json({ success: true, data: activity });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
+module.exports = {
+  syncActivity,
+  getActivities
 };

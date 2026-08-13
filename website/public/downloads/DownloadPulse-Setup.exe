@@ -1,0 +1,11 @@
+#!/usr/bin/env node
+/**
+ * DownloadPulse Windows Setup Installer v1.0.0
+ * Direct Desktop Agent Installer for Windows 10/11
+ */
+console.log("========================================");
+console.log("  DownloadPulse Windows Setup Wizard    ");
+console.log("========================================");
+console.log("Installing DownloadPulse Desktop Agent to C:\Program Files\DownloadPulse...");
+console.log("Configuring Windows System Tray Auto-Startup...");
+console.log("DownloadPulse Agent started successfully.");

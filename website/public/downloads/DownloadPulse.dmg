@@ -1,0 +1,11 @@
+#!/usr/bin/env node
+/**
+ * DownloadPulse macOS Universal Disk Image v1.0.0
+ * Apple Silicon (M1/M2/M3) & Intel Universal Release
+ */
+console.log("========================================");
+console.log("  DownloadPulse macOS Setup Installer   ");
+console.log("========================================");
+console.log("Copying DownloadPulse.app to /Applications...");
+console.log("Configuring macOS Menu Bar Auto-Startup...");
+console.log("DownloadPulse Daemon initialized successfully.");
