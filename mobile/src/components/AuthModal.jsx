@@ -15,8 +15,8 @@ import { loginWithGoogle } from '../services/api';
 WebBrowser.maybeCompleteAuthSession();
 
 export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
-  const [emailInput, setEmailInput] = useState('');
-  const [nameInput, setNameInput] = useState('');
+  const [emailInput, setEmailInput] = useState('meetjabhanputra2112@gmail.com');
+  const [nameInput, setNameInput] = useState('Meet Jobanputra');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -47,8 +47,8 @@ export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
 
           const userData = await loginWithGoogle(null, {
             id: profile.sub || `goog_${Date.now()}`,
-            email: profile.email || 'user@gmail.com',
-            name: profile.name || 'Google User',
+            email: profile.email || 'meetjabhanputra2112@gmail.com',
+            name: profile.name || 'Meet Jobanputra',
             picture: profile.picture || null
           });
 
@@ -58,7 +58,7 @@ export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
         }
       }
 
-      // If browser was dismissed or closed, complete sign-in smoothly with entered or default email
+      // If browser OAuth returns error or is dismissed, sign in automatically with user's email
       await handleCustomSubmit();
     } catch (err) {
       await handleCustomSubmit();
@@ -68,8 +68,8 @@ export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
   };
 
   const handleCustomSubmit = async () => {
-    const targetEmail = (emailInput.trim() || 'user@gmail.com').toLowerCase();
-    const targetName = nameInput.trim() || (emailInput.trim() ? emailInput.split('@')[0] : 'DownloadPulse User');
+    const targetEmail = (emailInput.trim() || 'meetjabhanputra2112@gmail.com').toLowerCase();
+    const targetName = nameInput.trim() || 'Meet Jobanputra';
 
     setLoading(true);
     setError(null);
@@ -108,7 +108,7 @@ export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
             <View style={styles.profileContainer}>
               <View style={styles.userCard}>
                 <Text style={styles.userLabel}>AUTHENTICATED USER</Text>
-                <Text style={styles.userName}>{user.name || 'Google User'}</Text>
+                <Text style={styles.userName}>{user.name || 'Meet Jobanputra'}</Text>
                 <Text style={styles.userEmail}>{user.email}</Text>
                 <Text style={styles.providerBadge}>Provider: Google OAuth 2.0</Text>
               </View>
@@ -158,7 +158,7 @@ export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
                   style={styles.textInput}
                   value={emailInput}
                   onChangeText={setEmailInput}
-                  placeholder="yourname@gmail.com"
+                  placeholder="meetjabhanputra2112@gmail.com"
                   placeholderTextColor="#94A3B8"
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -171,7 +171,7 @@ export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
                   style={styles.textInput}
                   value={nameInput}
                   onChangeText={setNameInput}
-                  placeholder="Full Name (Optional)"
+                  placeholder="Meet Jobanputra"
                   placeholderTextColor="#94A3B8"
                 />
               </View>
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   trustFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justify.content: 'center',
     gap: 6,
     marginTop: 4
   },

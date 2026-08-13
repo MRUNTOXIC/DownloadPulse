@@ -2,6 +2,7 @@
   "expo": {
     "name": "DownloadPulse",
     "slug": "downloadpulse-mobile",
+    "scheme": "downloadpulse",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
