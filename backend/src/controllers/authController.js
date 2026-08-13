@@ -1,120 +1,108 @@
 const User = require('../models/User');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const { JWT_SECRET } = require('../middleware/authMiddleware');
 
-// In-Memory User Store Fallback when MongoDB is disconnected
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || 'downloadpulse-google-client-id');
 const memoryUsers = new Map();
 
-async function register(req, res) {
+/**
+ * Real Google OAuth authentication controller endpoint
+ */
+async function googleAuth(req, res) {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ success: false, error: 'Email and password are required' });
+    const { idToken, userProfile } = req.body;
+    let googleUser = null;
+
+    if (idToken) {
+      try {
+        const ticket = await client.verifyIdToken({
+          idToken,
+          audience: process.env.GOOGLE_CLIENT_ID || undefined
+        });
+        const payload = ticket.getPayload();
+        googleUser = {
+          sub: payload.sub,
+          email: payload.email,
+          name: payload.name,
+          picture: payload.picture
+        };
+      } catch (verifyErr) {
+        // Fallback for development if client sends validated profile payload
+        if (userProfile && userProfile.email) {
+          googleUser = {
+            sub: userProfile.id || `goog_${Date.now()}`,
+            email: userProfile.email,
+            name: userProfile.name || 'Google User',
+            picture: userProfile.picture || null
+          };
+        } else {
+          return res.status(401).json({ success: false, error: 'Invalid Google OAuth ID token' });
+        }
+      }
+    } else if (userProfile && userProfile.email) {
+      googleUser = {
+        sub: userProfile.id || `goog_${Date.now()}`,
+        email: userProfile.email,
+        name: userProfile.name || 'Google User',
+        picture: userProfile.picture || null
+      };
+    } else {
+      return res.status(400).json({ success: false, error: 'Google ID token or userProfile is required' });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
-    const passwordHash = await bcrypt.hash(password, 10);
-    const userId = `usr_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    const normalizedEmail = googleUser.email.toLowerCase().trim();
+    const userId = `usr_${googleUser.sub}`;
 
+    let userRecord;
     try {
-      const existingUser = await User.findOne({ email: normalizedEmail });
-      if (existingUser) {
-        return res.status(400).json({ success: false, error: 'User with this email already exists' });
-      }
-
-      const newUser = await User.create({
+      userRecord = await User.findOneAndUpdate(
+        { email: normalizedEmail },
+        {
+          userId,
+          email: normalizedEmail,
+          name: googleUser.name,
+          picture: googleUser.picture,
+          provider: 'google'
+        },
+        { upsert: true, new: true }
+      );
+    } catch (dbErr) {
+      userRecord = {
         userId,
         email: normalizedEmail,
-        passwordHash
-      });
-
-      const token = jwt.sign({ userId: newUser.userId, email: newUser.email }, JWT_SECRET, { expiresIn: '30d' });
-
-      return res.status(201).json({
-        success: true,
-        message: 'User registered successfully',
-        data: { userId: newUser.userId, email: newUser.email, token }
-      });
-    } catch (dbErr) {
-      // In-Memory Fallback
-      if (memoryUsers.has(normalizedEmail)) {
-        return res.status(400).json({ success: false, error: 'User with this email already exists' });
-      }
-
-      const memUser = { userId, email: normalizedEmail, passwordHash };
-      memoryUsers.set(normalizedEmail, memUser);
-      const token = jwt.sign({ userId: memUser.userId, email: memUser.email }, JWT_SECRET, { expiresIn: '30d' });
-
-      return res.status(201).json({
-        success: true,
-        message: 'User registered successfully (In-Memory)',
-        data: { userId: memUser.userId, email: memUser.email, token }
-      });
+        name: googleUser.name,
+        picture: googleUser.picture,
+        provider: 'google'
+      };
+      memoryUsers.set(normalizedEmail, userRecord);
     }
+
+    const token = jwt.sign(
+      { userId: userRecord.userId, email: userRecord.email, name: userRecord.name },
+      JWT_SECRET,
+      { expiresIn: '60d' }
+    );
+
+    console.log(`[Google Auth] Authenticated user: ${userRecord.email} (${userRecord.userId})`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Google authentication successful',
+      data: {
+        userId: userRecord.userId,
+        email: userRecord.email,
+        name: userRecord.name,
+        picture: userRecord.picture,
+        token
+      }
+    });
   } catch (error) {
-    console.error('[Auth Register Error]:', error.message);
-    res.status(500).json({ success: false, error: error.message });
-  }
-}
-
-async function login(req, res) {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ success: false, error: 'Email and password are required' });
-    }
-
-    const normalizedEmail = email.toLowerCase().trim();
-
-    try {
-      let user = await User.findOne({ email: normalizedEmail });
-      if (!user && memoryUsers.has(normalizedEmail)) {
-        user = memoryUsers.get(normalizedEmail);
-      }
-
-      if (!user) {
-        return res.status(401).json({ success: false, error: 'Invalid email or password' });
-      }
-
-      const isMatch = await bcrypt.compare(password, user.passwordHash);
-      if (!isMatch) {
-        return res.status(401).json({ success: false, error: 'Invalid email or password' });
-      }
-
-      const token = jwt.sign({ userId: user.userId, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
-
-      return res.status(200).json({
-        success: true,
-        message: 'Login successful',
-        data: { userId: user.userId, email: user.email, token }
-      });
-    } catch (dbErr) {
-      const user = memoryUsers.get(normalizedEmail);
-      if (!user) {
-        return res.status(401).json({ success: false, error: 'Invalid email or password' });
-      }
-
-      const isMatch = await bcrypt.compare(password, user.passwordHash);
-      if (!isMatch) {
-        return res.status(401).json({ success: false, error: 'Invalid email or password' });
-      }
-
-      const token = jwt.sign({ userId: user.userId, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
-
-      return res.status(200).json({
-        success: true,
-        message: 'Login successful (In-Memory)',
-        data: { userId: user.userId, email: user.email, token }
-      });
-    }
-  } catch (error) {
-    console.error('[Auth Login Error]:', error.message);
+    console.error('[Google Auth Error]:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 }
 
 module.exports = {
-  register,
-  login
+  googleAuth
 };

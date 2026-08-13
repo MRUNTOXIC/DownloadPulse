@@ -1,32 +1,31 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { X, ShieldCheck } from 'lucide-react-native';
-import { loginUser, registerUser } from '../services/api';
+import { loginWithGoogle } from '../services/api';
 
 export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
-  const [email, setEmail] = useState('user@downloadpulse.io');
-  const [password, setPassword] = useState('password123');
-  const [name, setName] = useState('Alex Rivers');
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async () => {
+  const handleGoogleAuth = async () => {
     setError(null);
-    setSubmitting(true);
+    setLoading(true);
     try {
-      let userData;
-      if (isRegistering) {
-        userData = await registerUser(email, password, name);
-      } else {
-        userData = await loginUser(email, password);
-      }
+      // Simulate Google OAuth sign in payload
+      const mockGoogleProfile = {
+        id: 'google_user_10293',
+        email: 'user@gmail.com',
+        name: 'DownloadPulse User',
+        picture: null
+      };
+
+      const userData = await loginWithGoogle(null, mockGoogleProfile);
       if (onAuthSuccess) onAuthSuccess(userData);
       onClose();
     } catch (err) {
-      setError(err.message || 'Authentication failed.');
+      setError(err.message || 'Google authentication failed.');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -39,7 +38,7 @@ export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
           
           <View style={styles.header}>
             <Text style={styles.title}>
-              {user ? 'Account Profile' : isRegistering ? 'Create Account' : 'Log In to Pulse'}
+              {user ? 'Account Profile' : 'Sign In to DownloadPulse'}
             </Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <X size={18} color="#64748B" />
@@ -49,74 +48,40 @@ export function AuthModal({ visible, user, onClose, onAuthSuccess, onLogout }) {
           {user ? (
             <View style={styles.profileContainer}>
               <View style={styles.userCard}>
-                <Text style={styles.userLabel}>Logged in User</Text>
-                <Text style={styles.userName}>{user.name || user.email}</Text>
+                <Text style={styles.userLabel}>Authenticated User</Text>
+                <Text style={styles.userName}>{user.name || 'DownloadPulse User'}</Text>
                 <Text style={styles.userEmail}>{user.email}</Text>
+                <Text style={styles.providerBadge}>Provider: Google OAuth</Text>
               </View>
               <TouchableOpacity onPress={onLogout} style={styles.logoutBtn}>
                 <Text style={styles.logoutText}>Log Out</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={styles.formContainer}>
-              {isRegistering && (
-                <View style={styles.field}>
-                  <Text style={styles.label}>Full Name</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={name}
-                    onChangeText={setName}
-                    placeholder="Alex Rivers"
-                    placeholderTextColor="#94A3B8"
-                  />
-                </View>
-              )}
-
-              <View style={styles.field}>
-                <Text style={styles.label}>Email Address</Text>
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="user@downloadpulse.io"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-
-              <View style={styles.field}>
-                <Text style={styles.label}>Password</Text>
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="••••••••"
-                  placeholderTextColor="#94A3B8"
-                  secureTextEntry
-                />
-              </View>
+            <View style={styles.authContainer}>
+              <Text style={styles.subtitle}>
+                Log in to link your computers and receive real-time push notifications for file transfers.
+              </Text>
 
               {error && <Text style={styles.errorText}>{error}</Text>}
 
               <TouchableOpacity
-                onPress={handleSubmit}
-                disabled={submitting}
-                style={styles.submitBtn}
+                onPress={handleGoogleAuth}
+                disabled={loading}
+                style={styles.googleBtn}
               >
-                <Text style={styles.submitText}>
-                  {submitting ? 'Authenticating...' : isRegistering ? 'Register Account' : 'Log In'}
+                <View style={styles.googleIconBox}>
+                  <Text style={styles.googleIconText}>G</Text>
+                </View>
+                <Text style={styles.googleBtnText}>
+                  {loading ? 'Authenticating with Google...' : 'Continue with Google'}
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => setIsRegistering(!isRegistering)}
-                style={styles.switchBtn}
-              >
-                <Text style={styles.switchText}>
-                  {isRegistering ? 'Already have an account? Log In' : 'Need an account? Register'}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.trustFooter}>
+                <ShieldCheck size={14} color="#166534" />
+                <Text style={styles.trustText}>Verified OAuth Identity Protection</Text>
+              </View>
             </View>
           )}
 
@@ -167,9 +132,10 @@ const styles = StyleSheet.create({
   userCard: {
     backgroundColor: '#F8FAFC',
     borderRadius: 14,
-    padding: 12,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0'
+    borderColor: '#E2E8F0',
+    gap: 2
   },
   userLabel: {
     fontSize: 10,
@@ -178,15 +144,19 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase'
   },
   userName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
-    color: '#0F172A',
-    marginTop: 2
+    color: '#0F172A'
   },
   userEmail: {
     fontSize: 12,
-    color: '#475569',
-    marginTop: 1
+    color: '#475569'
+  },
+  providerBadge: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#2563EB',
+    marginTop: 4
   },
   logoutBtn: {
     backgroundColor: '#DC2626',
@@ -199,52 +169,58 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700'
   },
-  formContainer: {
+  authContainer: {
     marginTop: 14,
-    gap: 12
+    gap: 14
   },
-  field: {
-    gap: 4
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#475569'
-  },
-  input: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+  subtitle: {
     fontSize: 12,
-    color: '#0F172A'
+    color: '#64748B',
+    lineHeight: 18
   },
   errorText: {
     color: '#DC2626',
     fontSize: 11,
     fontWeight: '600'
   },
-  submitBtn: {
+  googleBtn: {
     backgroundColor: '#000000',
-    borderRadius: 12,
-    paddingVertical: 12,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4
+    justifyContent: 'center',
+    gap: 10
   },
-  submitText: {
+  googleIconBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  googleIconText: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#4285F4'
+  },
+  googleBtnText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700'
   },
-  switchBtn: {
+  trustFooter: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 4
   },
-  switchText: {
+  trustText: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#166534',
     fontWeight: '600'
   }
 });

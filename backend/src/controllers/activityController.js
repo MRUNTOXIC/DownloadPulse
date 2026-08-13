@@ -1,13 +1,14 @@
 const FileActivity = require('../models/FileActivity');
+const Device = require('../models/Device');
 const { sendPushNotification } = require('../services/pushNotificationService');
 
-// In-Memory Activity Store Fallback
 const memoryActivities = new Map();
 
 async function syncActivity(req, res) {
   try {
     const {
       activityId,
+      deviceId,
       activityType,
       status,
       filename,
@@ -25,17 +26,30 @@ async function syncActivity(req, res) {
       metadata
     } = req.body;
 
-    if (!activityId || !filename) {
-      return res.status(400).json({ success: false, error: 'activityId and filename are required' });
+    if (!filename || (!activityId && !destination)) {
+      return res.status(400).json({ success: false, error: 'filename and activityId/destination are required' });
     }
 
-    const userId = req.userId || null;
-    const deviceId = req.body.deviceId || null;
+    const targetDeviceId = deviceId || req.body.device || 'desktop_default';
+
+    // Verify Device Ownership (Strict Trust Boundary)
+    let pairedUserId = null;
+    try {
+      const deviceRecord = await Device.findOne({ deviceId: targetDeviceId });
+      if (deviceRecord && deviceRecord.userId && deviceRecord.isPaired) {
+        pairedUserId = deviceRecord.userId;
+      }
+    } catch (e) {}
+
+    // Logical Activity Key to deduplicate database records
+    const normalizedPath = (destination || filename).toLowerCase();
+    const activityKey = `${targetDeviceId}:${normalizedPath}:${activityType || 'UNKNOWN'}`;
 
     const payload = {
-      activityId,
-      userId,
-      deviceId,
+      activityId: activityId || `act_${Date.now()}`,
+      activityKey,
+      userId: pairedUserId || 'unpaired_temp',
+      deviceId: targetDeviceId,
       activityType: activityType || 'UNKNOWN',
       status: status || 'STARTED',
       filename,
@@ -47,30 +61,32 @@ async function syncActivity(req, res) {
       sourceDrive: sourceDrive || null,
       destinationDrive: destinationDrive || null,
       timestamp: timestamp ? new Date(timestamp) : new Date(),
-      device: device || 'Windows PC',
+      device: device || 'Desktop Agent',
       reason: reason || failureReason || null,
-      failureReason: failureReason || reason || null,
       metadata: metadata || {}
     };
 
     let activityRecord;
     try {
+      // Upsert by activityKey to update single document record per download/transfer
       activityRecord = await FileActivity.findOneAndUpdate(
-        { activityId },
+        { activityKey },
         payload,
         { upsert: true, new: true }
       );
     } catch (dbErr) {
-      memoryActivities.set(activityId, payload);
+      memoryActivities.set(activityKey, payload);
       activityRecord = payload;
     }
 
-    // Trigger Mobile Push Notification asynchronously
-    sendPushNotification(payload).catch(() => {});
+    // Trigger Mobile Push Notification ONLY if device is paired to a user account
+    if (pairedUserId) {
+      sendPushNotification(payload, pairedUserId).catch(() => {});
+    }
 
-    console.log(`[BACKEND ACTIVITY SYNC] [${payload.status}] ${payload.filename} (${payload.fileSize})`);
+    console.log(`[BACKEND ACTIVITY SYNC] [${payload.status}] ${payload.filename} (${payload.fileSize}) [Paired User: ${pairedUserId || 'NONE'}]`);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Activity synced successfully',
       data: activityRecord
@@ -83,12 +99,18 @@ async function syncActivity(req, res) {
 
 async function getActivities(req, res) {
   try {
-    const { type, status, q } = req.query;
-    const filter = {};
+    const userId = req.userId;
 
-    if (req.userId) {
-      filter.$or = [{ userId: req.userId }, { userId: null }];
+    // Strict Trust Boundary: Unauthenticated users or users with no paired devices see NO activities
+    if (!userId) {
+      return res.status(200).json({
+        success: true,
+        data: []
+      });
     }
+
+    const { type, status, q } = req.query;
+    const filter = { userId };
 
     if (type && type !== 'ALL') {
       filter.activityType = type;
@@ -109,7 +131,7 @@ async function getActivities(req, res) {
         data: activities
       });
     } catch (dbErr) {
-      let list = Array.from(memoryActivities.values());
+      let list = Array.from(memoryActivities.values()).filter(a => a.userId === userId);
 
       if (type && type !== 'ALL') {
         list = list.filter(a => a.activityType === type);

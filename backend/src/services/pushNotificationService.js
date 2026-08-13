@@ -3,7 +3,12 @@ const MobileDevice = require('../models/MobileDevice');
 
 const expo = new Expo();
 
-async function sendPushNotification(activity) {
+async function sendPushNotification(activity, targetUserId) {
+  // STRICT TRUST BOUNDARY: If device/activity has no paired userId, DO NOT SEND PUSH NOTIFICATION
+  if (!targetUserId) {
+    return;
+  }
+
   const { activityId, activityType, status, filename, fileSize, device, reason } = activity;
 
   // Only trigger push notifications for COMPLETED, FAILED, or USB transfers
@@ -16,10 +21,12 @@ async function sendPushNotification(activity) {
   if (!isImportant) return;
 
   try {
-    // Query push tokens
     let tokens = [];
     try {
-      const devices = await MobileDevice.find({ expoPushToken: { $exists: true, $ne: null } });
+      const devices = await MobileDevice.find({
+        userId: targetUserId,
+        expoPushToken: { $exists: true, $ne: null }
+      });
       tokens = devices.map(d => d.expoPushToken);
     } catch (e) {}
 
@@ -41,10 +48,7 @@ async function sendPushNotification(activity) {
 
     const messages = [];
     for (const pushToken of tokens) {
-      if (!Expo.isExpoPushToken(pushToken)) {
-        console.warn(`[Push Service] Invalid Expo Push Token: ${pushToken}`);
-        continue;
-      }
+      if (!Expo.isExpoPushToken(pushToken)) continue;
 
       messages.push({
         to: pushToken,
@@ -58,14 +62,11 @@ async function sendPushNotification(activity) {
     const chunks = expo.chunkPushNotifications(messages);
     for (const chunk of chunks) {
       try {
-        const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-        console.log('[Push Service] Dispatched push notification chunk:', ticketChunk);
-      } catch (err) {
-        console.error('[Push Service Error]:', err.message);
-      }
+        await expo.sendPushNotificationsAsync(chunk);
+      } catch (err) {}
     }
   } catch (error) {
-    console.error('[Push Notification Service Error]:', error.message);
+    console.error('[Push Notification Error]:', error.message);
   }
 }
 

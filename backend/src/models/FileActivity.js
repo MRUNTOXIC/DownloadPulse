@@ -6,14 +6,19 @@ const fileActivitySchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  activityKey: {
+    type: String,
+    required: true,
+    index: true
+  },
   userId: {
     type: String,
-    default: null,
+    required: true,
     index: true
   },
   deviceId: {
     type: String,
-    default: null,
+    required: true,
     index: true
   },
   activityType: {
@@ -64,13 +69,9 @@ const fileActivitySchema = new mongoose.Schema({
   },
   device: {
     type: String,
-    default: 'Windows PC'
+    default: 'Desktop Agent'
   },
   reason: {
-    type: String,
-    default: null
-  },
-  failureReason: {
     type: String,
     default: null
   },

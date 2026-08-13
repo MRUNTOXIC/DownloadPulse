@@ -13,9 +13,22 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   },
+  name: {
+    type: String,
+    default: 'DownloadPulse User'
+  },
+  picture: {
+    type: String,
+    default: null
+  },
+  provider: {
+    type: String,
+    enum: ['google', 'local'],
+    default: 'google'
+  },
   passwordHash: {
     type: String,
-    required: true
+    default: null
   }
 }, { timestamps: true });
 

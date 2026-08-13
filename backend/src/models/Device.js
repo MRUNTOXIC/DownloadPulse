@@ -6,6 +6,10 @@ const deviceSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  deviceToken: {
+    type: String,
+    required: true
+  },
   userId: {
     type: String,
     default: null,
@@ -42,10 +46,6 @@ const deviceSchema = new mongoose.Schema({
   isOnline: {
     type: Boolean,
     default: true
-  },
-  pairingCode: {
-    type: String,
-    default: null
   },
   isPaired: {
     type: Boolean,

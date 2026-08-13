@@ -11,7 +11,6 @@ import {
   SafeAreaView,
   ScrollView,
   Switch,
-  ActivityIndicator,
   Platform
 } from 'react-native';
 import {
@@ -22,8 +21,7 @@ import {
   Plus,
   Bell,
   RefreshCw,
-  Sliders,
-  Shield,
+  Trash2,
   Monitor
 } from 'lucide-react-native';
 
@@ -38,12 +36,13 @@ import { SimulatorDrawer } from './src/components/SimulatorDrawer';
 import {
   fetchActivities,
   fetchDevices,
-  getUserAuthToken
+  getUserAuthToken,
+  setUserAuthToken,
+  unpairDevice
 } from './src/services/api';
 import { setupPushNotifications } from './src/services/pushNotificationService';
 
 export default function App() {
-  // Navigation Tab State
   const [activeTab, setActiveTab] = useState('feed');
 
   // Data States
@@ -72,7 +71,7 @@ export default function App() {
   const [notifyOnComplete, setNotifyOnComplete] = useState(true);
   const [notifyOnFail, setNotifyOnFail] = useState(true);
 
-  // Fetch all initial app data
+  // Load user data
   const loadData = useCallback(async () => {
     try {
       const [actData, devData] = await Promise.all([
@@ -92,16 +91,13 @@ export default function App() {
   useEffect(() => {
     loadData();
 
-    // Setup push notification listener
     setupPushNotifications(activityId => {
-      // When a push notification is tapped, find and select the activity detail
       const target = activities.find(a => a.activityId === activityId);
       if (target) {
         setSelectedActivity(target);
       }
     });
 
-    // Auto-polling for real-time file transfer updates every 3 seconds
     const interval = setInterval(loadData, 3000);
     return () => clearInterval(interval);
   }, [loadData]);
@@ -111,11 +107,19 @@ export default function App() {
     loadData();
   };
 
-  const handleMarkNotificationsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  const handleUnpair = async (deviceId) => {
+    await unpairDevice(deviceId);
+    setDevices(prev => prev.filter(d => d.deviceId !== deviceId));
   };
 
-  // Filtered Activities
+  const handleLogout = () => {
+    setUserAuthToken(null);
+    setUser(null);
+    setActivities([]);
+    setDevices([]);
+    setShowAuthModal(false);
+  };
+
   const filteredActivities = activities.filter(act => {
     if (filterType !== 'ALL' && act.activityType !== filterType) return false;
     if (filterStatus !== 'ALL' && act.status !== filterStatus) return false;
@@ -151,17 +155,22 @@ export default function App() {
         {/* TAB 1: LIVE ACTIVITY FEED */}
         {activeTab === 'feed' && (
           <View style={styles.screenContent}>
-            {/* Quick Summary Banner */}
             <View style={styles.summaryBanner}>
               <View>
                 <Text style={styles.summaryTitle}>Live Activity Feed</Text>
                 <Text style={styles.summarySubtitle}>
-                  Monitoring <Text style={styles.summaryHighlight}>{devices.length} desktop device{devices.length === 1 ? '' : 's'}</Text>
+                  Monitoring <Text style={styles.summaryHighlight}>{devices.length} connected computer{devices.length === 1 ? '' : 's'}</Text>
                 </Text>
               </View>
 
               <TouchableOpacity
-                onPress={() => setShowPairingModal(true)}
+                onPress={() => {
+                  if (!user) {
+                    setShowAuthModal(true);
+                  } else {
+                    setShowPairingModal(true);
+                  }
+                }}
                 style={styles.pairPcButton}
                 activeOpacity={0.8}
               >
@@ -182,7 +191,6 @@ export default function App() {
                 </Text>
               </View>
 
-              {/* Type Filter Chips */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
                 {[
                   { id: 'ALL', label: 'All Types' },
@@ -196,26 +204,6 @@ export default function App() {
                     style={[styles.chip, filterType === chip.id && styles.activeChip]}
                   >
                     <Text style={[styles.chipText, filterType === chip.id && styles.activeChipText]}>
-                      {chip.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              {/* Status Filter Chips */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScrollSub}>
-                {[
-                  { id: 'ALL', label: 'All Statuses' },
-                  { id: 'COMPLETED', label: 'Completed' },
-                  { id: 'IN_PROGRESS', label: 'In Progress' },
-                  { id: 'FAILED', label: 'Failed/Cancelled' }
-                ].map(chip => (
-                  <TouchableOpacity
-                    key={chip.id}
-                    onPress={() => setFilterStatus(chip.id)}
-                    style={[styles.subChip, filterStatus === chip.id && styles.activeSubChip]}
-                  >
-                    <Text style={[styles.subChipText, filterStatus === chip.id && styles.activeSubChipText]}>
                       {chip.label}
                     </Text>
                   </TouchableOpacity>
@@ -237,20 +225,25 @@ export default function App() {
               ListEmptyComponent={
                 <View style={styles.emptyCard}>
                   <ActivityIcon size={24} color="#94A3B8" />
-                  <Text style={styles.emptyTitle}>No Matching Activity</Text>
-                  <Text style={styles.emptyDesc}>
-                    No desktop file operations match your selected filter criteria. Try clearing filters or trigger a simulated download.
+                  <Text style={styles.emptyTitle}>
+                    {!user ? 'Sign In Required' : devices.length === 0 ? 'No Computers Connected' : 'No Activity Found'}
                   </Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setFilterType('ALL');
-                      setFilterStatus('ALL');
-                      setSearchQuery('');
-                    }}
-                    style={styles.resetFiltersBtn}
-                  >
-                    <Text style={styles.resetFiltersText}>Reset All Filters</Text>
-                  </TouchableOpacity>
+                  <Text style={styles.emptyDesc}>
+                    {!user
+                      ? 'Please sign in with Google to view your paired computers and file activity.'
+                      : devices.length === 0
+                      ? 'Pair your Windows or Mac computer with the 6-digit pairing code to start tracking file downloads.'
+                      : 'No file activities match your selected filter criteria.'}
+                  </Text>
+                  {!user ? (
+                    <TouchableOpacity onPress={() => setShowAuthModal(true)} style={styles.resetFiltersBtn}>
+                      <Text style={styles.resetFiltersText}>Sign In with Google</Text>
+                    </TouchableOpacity>
+                  ) : devices.length === 0 ? (
+                    <TouchableOpacity onPress={() => setShowPairingModal(true)} style={styles.resetFiltersBtn}>
+                      <Text style={styles.resetFiltersText}>Pair Computer (+ Add Code)</Text>
+                    </TouchableOpacity>
+                  ) : null}
                 </View>
               }
             />
@@ -264,11 +257,14 @@ export default function App() {
               <View>
                 <Text style={styles.summaryTitle}>Paired Computers</Text>
                 <Text style={styles.summarySubtitle}>
-                  Desktop background agents syncing activity in real-time
+                  Computers explicitly paired to your account
                 </Text>
               </View>
               <TouchableOpacity
-                onPress={() => setShowPairingModal(true)}
+                onPress={() => {
+                  if (!user) setShowAuthModal(true);
+                  else setShowPairingModal(true);
+                }}
                 style={styles.pairPcButton}
               >
                 <Plus size={14} color="#FFFFFF" />
@@ -277,47 +273,64 @@ export default function App() {
             </View>
 
             <View style={{ gap: 10, marginTop: 10 }}>
-              {devices.map(device => (
-                <View key={device.deviceId} style={styles.deviceCard}>
-                  <View style={styles.deviceTopRow}>
-                    <View style={styles.deviceInfoRow}>
-                      <View style={styles.laptopIconBox}>
-                        <Laptop size={20} color="#0F172A" />
-                      </View>
-                      <View>
-                        <View style={styles.deviceNameRow}>
-                          <Text style={styles.cardDeviceName}>{device.name || device.deviceName}</Text>
-                          <View
-                            style={[
-                              styles.onlinePill,
-                              device.isOnline ? styles.onlinePillGreen : styles.onlinePillRed
-                            ]}
-                          >
-                            <Text
+              {devices.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Laptop size={28} color="#94A3B8" />
+                  <Text style={styles.emptyTitle}>0 Computers Connected</Text>
+                  <Text style={styles.emptyDesc}>
+                    No desktop devices are paired to your account. Enter the 6-digit code displayed on your desktop agent to connect.
+                  </Text>
+                </View>
+              ) : (
+                devices.map(device => (
+                  <View key={device.deviceId} style={styles.deviceCard}>
+                    <View style={styles.deviceTopRow}>
+                      <View style={styles.deviceInfoRow}>
+                        <View style={styles.laptopIconBox}>
+                          <Laptop size={20} color="#0F172A" />
+                        </View>
+                        <View>
+                          <View style={styles.deviceNameRow}>
+                            <Text style={styles.cardDeviceName}>{device.name || device.deviceName}</Text>
+                            <View
                               style={[
-                                styles.onlinePillText,
-                                { color: device.isOnline ? '#15803D' : '#B91C1C' }
+                                styles.onlinePill,
+                                device.isOnline ? styles.onlinePillGreen : styles.onlinePillRed
                               ]}
                             >
-                              {device.isOnline ? 'Online' : 'Offline'}
-                            </Text>
+                              <Text
+                                style={[
+                                  styles.onlinePillText,
+                                  { color: device.isOnline ? '#15803D' : '#B91C1C' }
+                                ]}
+                              >
+                                {device.isOnline ? 'Online' : 'Offline'}
+                              </Text>
+                            </View>
                           </View>
+                          <Text style={styles.osText}>
+                            OS: {(device.os || device.platform || 'windows').toUpperCase()} • v{device.agentVersion || '1.0.0'}
+                          </Text>
                         </View>
-                        <Text style={styles.osText}>
-                          OS: {(device.os || device.platform || 'windows').toUpperCase()} • v{device.agentVersion || '1.0.0'}
-                        </Text>
                       </View>
+
+                      <TouchableOpacity
+                        onPress={() => handleUnpair(device.deviceId)}
+                        style={styles.unpairBtn}
+                      >
+                        <Trash2 size={14} color="#DC2626" />
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.deviceBottomRow}>
+                      <Text style={styles.lastSeenText}>
+                        Last Heartbeat: {new Date(device.lastHeartbeat || Date.now()).toLocaleTimeString()}
+                      </Text>
+                      <Text style={styles.deviceIdText}>ID: {device.deviceId}</Text>
                     </View>
                   </View>
-
-                  <View style={styles.deviceBottomRow}>
-                    <Text style={styles.lastSeenText}>
-                      Last Activity: {new Date(device.lastHeartbeat || device.lastSeen || Date.now()).toLocaleTimeString()}
-                    </Text>
-                    <Text style={styles.deviceIdText}>ID: {device.deviceId}</Text>
-                  </View>
-                </View>
-              ))}
+                ))
+              )}
             </View>
           </ScrollView>
         )}
@@ -348,7 +361,7 @@ export default function App() {
               contentContainerStyle={styles.listPadding}
               ListEmptyComponent={
                 <View style={styles.emptyCard}>
-                  <Text style={styles.emptyDesc}>No matching file records found for "{searchQuery}".</Text>
+                  <Text style={styles.emptyDesc}>No matching file records found.</Text>
                 </View>
               }
             />
@@ -361,16 +374,8 @@ export default function App() {
             <View style={styles.summaryBanner}>
               <View>
                 <Text style={styles.summaryTitle}>Mobile Push Alerts</Text>
-                <Text style={styles.summarySubtitle}>
-                  Expo Push Notification delivery history
-                </Text>
+                <Text style={styles.summarySubtitle}>Expo Push Notification delivery history</Text>
               </View>
-
-              {unreadCount > 0 && (
-                <TouchableOpacity onPress={handleMarkNotificationsRead} style={styles.markReadBtn}>
-                  <Text style={styles.markReadText}>Mark All Read</Text>
-                </TouchableOpacity>
-              )}
             </View>
 
             <View style={{ gap: 10, marginTop: 10 }}>
@@ -380,10 +385,7 @@ export default function App() {
                 </View>
               ) : (
                 notifications.map(notif => (
-                  <View
-                    key={notif.id}
-                    style={[styles.notifCard, !notif.isRead && styles.unreadNotifCard]}
-                  >
+                  <View key={notif.id} style={styles.notifCard}>
                     <View style={styles.notifRow}>
                       <View style={styles.notifIconBox}>
                         <Bell size={16} color="#2563EB" />
@@ -391,9 +393,6 @@ export default function App() {
                       <View style={{ flex: 1 }}>
                         <Text style={styles.notifTitle}>{notif.title}</Text>
                         <Text style={styles.notifBody}>{notif.body}</Text>
-                        <Text style={styles.notifTime}>
-                          {new Date(notif.timestamp || Date.now()).toLocaleTimeString()}
-                        </Text>
                       </View>
                     </View>
                   </View>
@@ -406,26 +405,23 @@ export default function App() {
         {/* TAB 5: SETTINGS */}
         {activeTab === 'settings' && (
           <ScrollView style={styles.screenContent} contentContainerStyle={styles.listPadding}>
-            {/* Profile Card */}
             <View style={styles.settingsCard}>
               <View style={styles.profileRow}>
                 <View style={styles.profileAvatar}>
-                  <Text style={styles.profileAvatarText}>{user ? user.name.charAt(0) : 'A'}</Text>
+                  <Text style={styles.profileAvatarText}>{user ? user.name?.charAt(0) : 'A'}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.profileName}>{user?.name || 'Alex Rivers'}</Text>
+                  <Text style={styles.profileName}>{user?.name || 'Sign In Required'}</Text>
                   <Text style={styles.profileEmail}>{user?.email || 'user@downloadpulse.io'}</Text>
                 </View>
                 <TouchableOpacity onPress={() => setShowAuthModal(true)} style={styles.accountBtn}>
-                  <Text style={styles.accountBtnText}>Account</Text>
+                  <Text style={styles.accountBtnText}>{user ? 'Account' : 'Sign In'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Notification Preferences */}
             <View style={styles.settingsCard}>
               <Text style={styles.settingsSectionTitle}>MOBILE PUSH PREFERENCES</Text>
-
               <View style={styles.toggleRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.toggleLabel}>USB Drive Transfers</Text>
@@ -433,7 +429,6 @@ export default function App() {
                 </View>
                 <Switch value={notifyOnUsb} onValueChange={setNotifyOnUsb} trackColor={{ true: '#000000' }} />
               </View>
-
               <View style={styles.toggleRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.toggleLabel}>Transfer Completion</Text>
@@ -441,32 +436,8 @@ export default function App() {
                 </View>
                 <Switch value={notifyOnComplete} onValueChange={setNotifyOnComplete} trackColor={{ true: '#000000' }} />
               </View>
-
-              <View style={styles.toggleRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.toggleLabel}>Transfer Failures</Text>
-                  <Text style={styles.toggleDesc}>Alert on network disconnects or errors</Text>
-                </View>
-                <Switch value={notifyOnFail} onValueChange={setNotifyOnFail} trackColor={{ true: '#000000' }} />
-              </View>
             </View>
 
-            {/* Expo Device Info */}
-            <View style={styles.settingsCard}>
-              <Text style={styles.settingsSectionTitle}>EXPO DEVICE CONFIGURATION</Text>
-              <View style={styles.infoBox}>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoKey}>Push Token:</Text>
-                  <Text style={styles.infoVal}>ExponentPushToken[992x18a]</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoKey}>Backend Host:</Text>
-                  <Text style={styles.infoVal}>http://localhost:5001/api</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Simulator Toggle Button */}
             <TouchableOpacity
               onPress={() => setShowSimulatorDrawer(!showSimulatorDrawer)}
               style={styles.openSimulatorBtn}
@@ -482,25 +453,16 @@ export default function App() {
           visible={showSimulatorDrawer}
           onClose={() => setShowSimulatorDrawer(false)}
           onSimulatedEvent={newAct => {
-            if (newAct) {
-              setActivities(prev => [newAct, ...prev]);
-            }
+            if (newAct) setActivities(prev => [newAct, ...prev]);
           }}
         />
 
         {/* Bottom Navigation Bar */}
-        <ExpoTabBar
-          activeTab={activeTab}
-          onChangeTab={setActiveTab}
-          unreadCount={unreadCount}
-        />
+        <ExpoTabBar activeTab={activeTab} onChangeTab={setActiveTab} unreadCount={unreadCount} />
 
         {/* Detail Modal */}
         {selectedActivity && (
-          <ActivityDetailModal
-            activity={selectedActivity}
-            onClose={() => setSelectedActivity(null)}
-          />
+          <ActivityDetailModal activity={selectedActivity} onClose={() => setSelectedActivity(null)} />
         )}
 
         {/* Pairing Modal */}
@@ -517,8 +479,11 @@ export default function App() {
           visible={showAuthModal}
           user={user}
           onClose={() => setShowAuthModal(false)}
-          onAuthSuccess={u => setUser(u)}
-          onLogout={() => setUser(null)}
+          onAuthSuccess={u => {
+            setUser(u);
+            loadData();
+          }}
+          onLogout={handleLogout}
         />
       </View>
     </SafeAreaView>
@@ -550,12 +515,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
-    elevation: 1,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3
+    marginBottom: 10
   },
   summaryTitle: {
     fontSize: 14,
@@ -612,10 +572,6 @@ const styles = StyleSheet.create({
   chipsScroll: {
     flexDirection: 'row'
   },
-  chipsScrollSub: {
-    flexDirection: 'row',
-    marginTop: 2
-  },
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -635,25 +591,6 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   activeChipText: {
-    color: '#FFFFFF',
-    fontWeight: '800'
-  },
-  subChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: '#F1F5F9',
-    marginRight: 6
-  },
-  activeSubChip: {
-    backgroundColor: '#1E293B'
-  },
-  subChipText: {
-    fontSize: 10,
-    color: '#64748B',
-    fontWeight: '600'
-  },
-  activeSubChipText: {
     color: '#FFFFFF',
     fontWeight: '800'
   },
@@ -680,16 +617,16 @@ const styles = StyleSheet.create({
     lineHeight: 16
   },
   resetFiltersBtn: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#000000',
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 10,
     marginTop: 6
   },
   resetFiltersText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#1E293B'
+    color: '#FFFFFF'
   },
   deviceCard: {
     backgroundColor: '#FFFFFF',
@@ -707,7 +644,8 @@ const styles = StyleSheet.create({
   deviceInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10
+    gap: 10,
+    flex: 1
   },
   laptopIconBox: {
     width: 40,
@@ -751,6 +689,13 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 2
   },
+  unpairBtn: {
+    padding: 8,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#FEE2E2'
+  },
   deviceBottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -765,8 +710,7 @@ const styles = StyleSheet.create({
   },
   deviceIdText: {
     fontSize: 9,
-    color: '#94A3B8',
-    fontFamily: 'Platform'
+    color: '#94A3B8'
   },
   searchBanner: {
     padding: 14,
@@ -788,27 +732,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#0F172A'
   },
-  markReadBtn: {
-    backgroundColor: '#F1F5F9',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6
-  },
-  markReadText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#1E293B'
-  },
   notifCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#F1F5F9',
     padding: 12
-  },
-  unreadNotifCard: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE'
   },
   notifRow: {
     flexDirection: 'row',
@@ -832,11 +761,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#475569',
     marginTop: 2
-  },
-  notifTime: {
-    fontSize: 9,
-    color: '#94A3B8',
-    marginTop: 4
   },
   settingsCard: {
     backgroundColor: '#FFFFFF',
@@ -917,7 +841,7 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between'
+    justify.content: 'space-between'
   },
   infoKey: {
     fontSize: 10,
@@ -926,8 +850,7 @@ const styles = StyleSheet.create({
   infoVal: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#0F172A',
-    fontFamily: 'Platform'
+    color: '#0F172A'
   },
   openSimulatorBtn: {
     backgroundColor: '#000000',

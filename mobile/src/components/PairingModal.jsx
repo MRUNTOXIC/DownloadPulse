@@ -1,63 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
-import { X, Laptop, CheckCircle2, Clock, Monitor, RefreshCw, AlertTriangle } from 'lucide-react-native';
-import { generatePairingCode, pairDevice } from '../services/api';
+import { X, Laptop, CheckCircle2, AlertTriangle, KeyRound } from 'lucide-react-native';
+import { verifyPairingCode } from '../services/api';
 
 export function PairingModal({ visible, onClose, onDevicePaired }) {
-  const [pairingCode, setPairingCode] = useState('482931');
-  const [loading, setLoading] = useState(false);
+  const [pairingCodeInput, setPairingCodeInput] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(300);
-  const [simulatedDeviceName, setSimulatedDeviceName] = useState('Workstation-PC');
-  const [isConfirming, setIsConfirming] = useState(false);
   const [pairedDevice, setPairedDevice] = useState(null);
 
-  const startPairingSession = async () => {
-    setLoading(true);
+  const handleVerifyCode = async () => {
+    if (!pairingCodeInput.trim()) {
+      setError('Please enter a 6-digit code');
+      return;
+    }
+
+    setIsVerifying(true);
     setError(null);
     try {
-      const data = await generatePairingCode();
-      setPairingCode(data.pairingCode || '482931');
-      setTimeLeft(300);
-    } catch (err) {
-      setError(err.message || 'Failed to generate pairing code');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (visible) {
-      startPairingSession();
-    }
-  }, [visible]);
-
-  useEffect(() => {
-    if (!visible || timeLeft <= 0) return;
-    const timer = setInterval(() => {
-      setTimeLeft(prev => (prev <= 1 ? 0 : prev - 1));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [visible, timeLeft]);
-
-  const handleSimulateAgentConfirm = async () => {
-    setIsConfirming(true);
-    setError(null);
-    try {
-      const device = await pairDevice(pairingCode, simulatedDeviceName, 'windows');
+      const device = await verifyPairingCode(pairingCodeInput.trim());
       setPairedDevice(device);
       if (onDevicePaired) onDevicePaired(device);
     } catch (err) {
-      setError(err.message || 'Pairing failed');
+      setError(err.message || 'Invalid or expired 6-digit pairing code');
     } finally {
-      setIsConfirming(false);
+      setIsVerifying(false);
     }
-  };
-
-  const formatTime = secs => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
   if (!visible) return null;
@@ -70,7 +38,7 @@ export function PairingModal({ visible, onClose, onDevicePaired }) {
           <View style={styles.header}>
             <View style={styles.headerTitleRow}>
               <Laptop size={18} color="#000000" />
-              <Text style={styles.title}>Pair New Computer</Text>
+              <Text style={styles.title}>Pair Computer</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <X size={18} color="#64748B" />
@@ -82,27 +50,39 @@ export function PairingModal({ visible, onClose, onDevicePaired }) {
               <View style={styles.successIconBox}>
                 <CheckCircle2 size={36} color="#166534" />
               </View>
-              <Text style={styles.successTitle}>Computer Paired!</Text>
+              <Text style={styles.successTitle}>Computer Connected!</Text>
               <Text style={styles.successDesc}>
-                {pairedDevice.name || pairedDevice.deviceName} is now associated with your DownloadPulse account.
+                <Text style={{ fontWeight: '700', color: '#000000' }}>
+                  {pairedDevice.deviceName || pairedDevice.name || 'Desktop PC'}
+                </Text>{' '}
+                is now securely linked to your account.
               </Text>
               <TouchableOpacity onPress={onClose} style={styles.doneBtn}>
-                <Text style={styles.doneBtnText}>Done</Text>
+                <Text style={styles.doneBtnText}>Continue to Feed</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.body}>
               <Text style={styles.instructions}>
-                Open the DownloadPulse Desktop Agent on your PC or Mac and enter this temporary 6-digit pairing code:
+                Look at the DownloadPulse Desktop Agent window on your PC or Mac and enter the 6-digit pairing code:
               </Text>
 
-              {/* Code Box */}
-              <View style={styles.codeBox}>
-                <Text style={styles.codeText}>{pairingCode}</Text>
-                <View style={styles.timerRow}>
-                  <Clock size={12} color="#D97706" />
-                  <Text style={styles.timerText}>Expires in: {formatTime(timeLeft)}</Text>
-                </View>
+              {/* Pairing Code Input */}
+              <View style={styles.inputWrapper}>
+                <KeyRound size={18} color="#64748B" />
+                <TextInput
+                  style={styles.codeInput}
+                  value={pairingCodeInput}
+                  onChangeText={text => {
+                    setPairingCodeInput(text);
+                    if (error) setError(null);
+                  }}
+                  placeholder="000000"
+                  placeholderTextColor="#CBD5E1"
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  autoFocus
+                />
               </View>
 
               {error && (
@@ -112,36 +92,22 @@ export function PairingModal({ visible, onClose, onDevicePaired }) {
                 </View>
               )}
 
-              {/* Desktop Agent Confirm Box */}
-              <View style={styles.simBox}>
-                <Text style={styles.simTitle}>Simulate Desktop Agent</Text>
-                <TextInput
-                  style={styles.simInput}
-                  value={simulatedDeviceName}
-                  onChangeText={setSimulatedDeviceName}
-                  placeholder="Computer Name (e.g. Meets-PC)"
-                  placeholderTextColor="#94A3B8"
-                />
-                <TouchableOpacity
-                  onPress={handleSimulateAgentConfirm}
-                  disabled={isConfirming || timeLeft <= 0}
-                  style={styles.pairBtn}
-                >
-                  <Text style={styles.pairBtnText}>
-                    {isConfirming ? 'Verifying Code...' : 'Confirm Pairing on Desktop Agent'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                onPress={handleVerifyCode}
+                disabled={isVerifying || pairingCodeInput.length < 6}
+                style={[
+                  styles.verifyBtn,
+                  pairingCodeInput.length < 6 && styles.disabledVerifyBtn
+                ]}
+              >
+                <Text style={styles.verifyBtnText}>
+                  {isVerifying ? 'Verifying Code...' : 'Pair Computer'}
+                </Text>
+              </TouchableOpacity>
 
-              <View style={styles.bottomRow}>
-                <TouchableOpacity onPress={startPairingSession} style={styles.refreshCodeBtn}>
-                  <RefreshCw size={12} color="#64748B" />
-                  <Text style={styles.refreshCodeText}>Generate New Code</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={onClose}>
-                  <Text style={styles.cancelText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity onPress={onClose} style={{ alignItems: 'center', marginTop: 4 }}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -163,7 +129,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     width: '100%',
-    maxWidth: 400,
+    maxWidth: 380,
     padding: 20,
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -199,32 +165,23 @@ const styles = StyleSheet.create({
     color: '#475569',
     lineHeight: 18
   },
-  codeBox: {
+  inputWrapper: {
     backgroundColor: '#F8FAFC',
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 18,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  codeText: {
-    fontSize: 32,
-    fontWeight: '900',
-    letterSpacing: 8,
-    color: '#000000',
-    fontFamily: 'Platform'
-  },
-  timerRow: {
+    borderWidth: 1.5,
+    borderColor: '#000000',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 6
+    gap: 10
   },
-  timerText: {
-    fontSize: 11,
-    color: '#D97706',
-    fontWeight: '700'
+  codeInput: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: '900',
+    letterSpacing: 8,
+    color: '#000000'
   },
   errorBox: {
     backgroundColor: '#FEF2F2',
@@ -239,57 +196,23 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#DC2626',
     fontSize: 11,
-    fontWeight: '600'
+    fontWeight: '600',
+    flex: 1
   },
-  simBox: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 12,
-    gap: 8
-  },
-  simTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#0F172A'
-  },
-  simInput: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 12,
-    color: '#0F172A'
-  },
-  pairBtn: {
+  verifyBtn: {
     backgroundColor: '#000000',
-    borderRadius: 12,
-    paddingVertical: 10,
-    alignItems: 'center'
-  },
-  pairBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700'
-  },
-  bottomRow: {
-    flexDirection: 'row',
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginTop: 4
   },
-  refreshCodeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4
+  disabledVerifyBtn: {
+    backgroundColor: '#94A3B8'
   },
-  refreshCodeText: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '600'
+  verifyBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700'
   },
   cancelText: {
     fontSize: 11,
@@ -319,7 +242,8 @@ const styles = StyleSheet.create({
   successDesc: {
     fontSize: 12,
     color: '#64748B',
-    textAlign: 'center'
+    textAlign: 'center',
+    lineHeight: 18
   },
   doneBtn: {
     backgroundColor: '#000000',

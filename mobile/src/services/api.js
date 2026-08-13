@@ -1,6 +1,5 @@
 import { Platform } from 'react-native';
 
-// Configurable API URL with host IP fallback for mobile devices
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ||
   (Platform.OS === 'android' ? 'http://10.0.2.2:5001/api' : 'http://localhost:5001/api');
@@ -27,6 +26,8 @@ function getHeaders() {
 
 export async function fetchActivities(options = {}) {
   try {
+    if (!userToken) return []; // Unauthenticated users see 0 activities
+
     const queryParams = new URLSearchParams();
     if (options.type && options.type !== 'ALL') queryParams.append('type', options.type);
     if (options.status && options.status !== 'ALL') queryParams.append('status', options.status);
@@ -47,6 +48,8 @@ export async function fetchActivities(options = {}) {
 
 export async function fetchDevices() {
   try {
+    if (!userToken) return []; // Unauthenticated users see 0 devices
+
     const response = await fetch(`${API_BASE_URL}/devices`, { headers: getHeaders() });
     const json = await response.json();
     if (json.success && Array.isArray(json.data)) {
@@ -58,15 +61,15 @@ export async function fetchDevices() {
   return [];
 }
 
-export async function loginUser(email, password) {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+export async function loginWithGoogle(idToken, userProfile) {
+  const response = await fetch(`${API_BASE_URL}/auth/google`, {
     method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ email, password })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken, userProfile })
   });
   const json = await response.json();
   if (!response.ok || !json.success) {
-    throw new Error(json.error || 'Login failed');
+    throw new Error(json.error || 'Google authentication failed');
   }
   if (json.data?.token) {
     setUserAuthToken(json.data.token);
@@ -74,54 +77,35 @@ export async function loginUser(email, password) {
   return json.data;
 }
 
-export async function registerUser(email, password, name) {
-  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+export async function verifyPairingCode(pairingCode) {
+  if (!userToken) {
+    throw new Error('Please log in with Google before pairing a computer.');
+  }
+
+  const response = await fetch(`${API_BASE_URL}/pairing/verify`, {
     method: 'POST',
     headers: getHeaders(),
-    body: JSON.stringify({ email, password, name })
+    body: JSON.stringify({ pairingCode: pairingCode.toString().trim() })
   });
   const json = await response.json();
   if (!response.ok || !json.success) {
-    throw new Error(json.error || 'Registration failed');
-  }
-  if (json.data?.token) {
-    setUserAuthToken(json.data.token);
+    throw new Error(json.error || 'Invalid or expired 6-digit pairing code');
   }
   return json.data;
 }
 
-export async function generatePairingCode() {
-  const response = await fetch(`${API_BASE_URL}/devices/pair-code`, {
-    method: 'POST',
+export async function unpairDevice(deviceId) {
+  if (!userToken) return;
+  const response = await fetch(`${API_BASE_URL}/pairing/${deviceId}/pair`, {
+    method: 'DELETE',
     headers: getHeaders()
   });
-  const json = await response.json();
-  if (!response.ok || !json.success) {
-    throw new Error(json.error || 'Failed to generate pairing code');
-  }
-  return json.data;
-}
-
-export async function pairDevice(pairingCode, deviceName, platform = 'windows') {
-  const response = await fetch(`${API_BASE_URL}/devices/pair`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({
-      deviceId: `dev_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      deviceName: deviceName || 'Workstation PC',
-      platform,
-      pairingCode
-    })
-  });
-  const json = await response.json();
-  if (!response.ok || !json.success) {
-    throw new Error(json.error || 'Pairing failed');
-  }
-  return json.data;
+  return await response.json();
 }
 
 export async function registerPushToken(expoPushToken, deviceId) {
   try {
+    if (!userToken) return;
     const response = await fetch(`${API_BASE_URL}/devices/push-token`, {
       method: 'POST',
       headers: getHeaders(),
@@ -162,7 +146,6 @@ export async function triggerSimulatedActivity(payload) {
     const json = await response.json();
     return json.data || fullPayload;
   } catch (error) {
-    console.warn('[Mobile API] Error triggering simulation:', error.message);
     return null;
   }
 }

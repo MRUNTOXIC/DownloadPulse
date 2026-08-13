@@ -2,12 +2,10 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 const dotenv = require('dotenv');
+const deviceCredentials = require('./deviceCredentials');
 
 dotenv.config();
 
-/**
- * Dynamically resolves monitored locations (Downloads folder + root drives / Volumes).
- */
 function getDefaultMonitoredPaths() {
   const defaultPaths = [];
   const downloadsDir = path.join(os.homedir(), 'Downloads');
@@ -15,19 +13,15 @@ function getDefaultMonitoredPaths() {
     defaultPaths.push(downloadsDir);
   }
 
-  // Windows drive detection
   if (process.platform === 'win32') {
     const possibleDrives = ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
     possibleDrives.forEach(drive => {
       const drivePath = `${drive}:\\`;
       try {
-        if (fs.existsSync(drivePath)) {
-          defaultPaths.push(drivePath);
-        }
+        if (fs.existsSync(drivePath)) defaultPaths.push(drivePath);
       } catch (e) {}
     });
   } else if (process.platform === 'darwin') {
-    // macOS Volumes (External drives, USB drives)
     const volumesPath = '/Volumes';
     try {
       if (fs.existsSync(volumesPath)) {
@@ -46,16 +40,15 @@ function getDefaultMonitoredPaths() {
 }
 
 const config = {
-  // Device identity & persistent deviceId
-  deviceId: process.env.DEVICE_ID || `dev_${os.hostname().replace(/[^a-zA-Z0-9]/g, '_')}`,
+  // Persistent UUID Device Credentials
+  deviceId: deviceCredentials.deviceId,
+  deviceToken: deviceCredentials.deviceToken,
   deviceName: process.env.DEVICE_NAME || os.hostname(),
   platform: process.platform,
   OS: process.platform === 'darwin' ? 'macOS' : (process.platform === 'win32' ? 'Windows' : 'Linux'),
 
-  // Primary Downloads directory
+  // Monitored directories
   downloadsDir: process.env.DOWNLOADS_DIR || path.join(os.homedir(), 'Downloads'),
-
-  // Configured monitored directories
   monitoredPaths: process.env.MONITORED_PATHS
     ? process.env.MONITORED_PATHS.split(',').map(p => p.trim())
     : getDefaultMonitoredPaths(),
@@ -69,14 +62,13 @@ const config = {
   stallTimeoutMs: parseInt(process.env.STALL_TIMEOUT_MS, 10) || 5000,
   failureTimeoutMs: parseInt(process.env.FAILURE_TIMEOUT_MS, 10) || 15000,
 
-  // Desktop notifications toggle
   enableNotifications: process.env.ENABLE_NOTIFICATIONS !== 'false',
 
-  // Temporary file extensions
-  tempExtensions: ['.crdownload', '.part', '.tmp', '.download', '.ubd', '.aria2', '!ut', '.idm'],
+  // Temporary download file extensions (internal state tracking only)
+  tempExtensions: ['.crdownload', '.part', '.tmp', '.download', '.ubd', '.aria2', '!ut', '.idm', '.partial'],
 
-  // Ignored system directories
-  ignoredDirectories: [
+  // Ignored system files & directories
+  ignoredFilesAndDirs: [
     'System Volume Information',
     '$RECYCLE.BIN',
     'AppData',
@@ -86,9 +78,13 @@ const config = {
     'node_modules',
     '.git',
     '.vscode',
+    '.idea',
     'Library',
     '.Trash',
-    '.Spotlight-V100'
+    '.Spotlight-V100',
+    '.DS_Store',
+    'Thumbs.db',
+    'desktop.ini'
   ]
 };
 
