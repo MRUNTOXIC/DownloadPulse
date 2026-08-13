@@ -1,15 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Laptop, Bell, RefreshCw, User } from 'lucide-react-native';
+import { Laptop, Bell, User } from 'lucide-react-native';
 
 export function ExpoHeader({
   user,
   devices = [],
   unreadCount = 0,
   onOpenNotifications,
-  onOpenAuth,
-  onRefresh,
-  isRefreshing
+  onOpenAuth
 }) {
   const activeDevice = devices.find(d => d.isOnline) || devices[0];
 
@@ -56,15 +54,6 @@ export function ExpoHeader({
       {/* Action Buttons */}
       <View style={styles.actionRow}>
         <TouchableOpacity
-          onPress={onRefresh}
-          disabled={isRefreshing}
-          style={styles.iconButton}
-          activeOpacity={0.7}
-        >
-          <RefreshCw size={16} color={isRefreshing ? '#000000' : '#475569'} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
           onPress={onOpenNotifications}
           style={styles.iconButton}
           activeOpacity={0.7}
@@ -104,7 +93,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
   brandContainer: {
-    flexDirection: 'col'
+    flexDirection: 'column'
   },
   titleRow: {
     flexDirection: 'row',
@@ -209,7 +198,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#000000',
     alignItems: 'center',
-    justifyContent: 'center'
+    justify.content: 'center'
   },
   avatarText: {
     color: '#FFFFFF',

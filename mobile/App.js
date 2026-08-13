@@ -20,7 +20,6 @@ import {
   Filter,
   Plus,
   Bell,
-  RefreshCw,
   Trash2,
   Monitor
 } from 'lucide-react-native';
@@ -71,7 +70,7 @@ export default function App() {
   const [notifyOnComplete, setNotifyOnComplete] = useState(true);
   const [notifyOnFail, setNotifyOnFail] = useState(true);
 
-  // Load user data
+  // Auto Background Sync Every 3 Seconds
   const loadData = useCallback(async () => {
     try {
       const [actData, devData] = await Promise.all([
@@ -81,7 +80,7 @@ export default function App() {
       setActivities(actData);
       setDevices(devData);
     } catch (err) {
-      console.warn('[Mobile App] Error loading data:', err.message);
+      console.warn('[Mobile App] Background sync error:', err.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -98,6 +97,7 @@ export default function App() {
       }
     });
 
+    // Seamless automatic background refresh every 3 seconds
     const interval = setInterval(loadData, 3000);
     return () => clearInterval(interval);
   }, [loadData]);
@@ -148,8 +148,6 @@ export default function App() {
           unreadCount={unreadCount}
           onOpenNotifications={() => setActiveTab('notifications')}
           onOpenAuth={() => setShowAuthModal(true)}
-          onRefresh={handleRefresh}
-          isRefreshing={refreshing}
         />
 
         {/* TAB 1: LIVE ACTIVITY FEED */}
@@ -211,7 +209,7 @@ export default function App() {
               </ScrollView>
             </View>
 
-            {/* Activity List */}
+            {/* Activity List with Pull-to-Refresh */}
             <FlatList
               data={filteredActivities}
               keyExtractor={item => item.activityId || item._id || Math.random().toString()}
@@ -289,9 +287,11 @@ export default function App() {
                         <View style={styles.laptopIconBox}>
                           <Laptop size={20} color="#0F172A" />
                         </View>
-                        <View>
+                        <View style={{ flex: 1 }}>
                           <View style={styles.deviceNameRow}>
-                            <Text style={styles.cardDeviceName}>{device.name || device.deviceName}</Text>
+                            <Text style={styles.cardDeviceName} numberOfLines={1} ellipsizeMode="tail">
+                              {device.name || device.deviceName}
+                            </Text>
                             <View
                               style={[
                                 styles.onlinePill,
@@ -309,7 +309,7 @@ export default function App() {
                             </View>
                           </View>
                           <Text style={styles.osText}>
-                            OS: {(device.os || device.platform || 'windows').toUpperCase()} • v{device.agentVersion || '1.0.0'}
+                            {(device.os || device.platform || 'windows').toUpperCase()} • v{device.agentVersion || '1.0.0'}
                           </Text>
                         </View>
                       </View>
@@ -322,11 +322,14 @@ export default function App() {
                       </TouchableOpacity>
                     </View>
 
+                    {/* Compact Card Bottom Box (Fixed overflow layout) */}
                     <View style={styles.deviceBottomRow}>
-                      <Text style={styles.lastSeenText}>
-                        Last Heartbeat: {new Date(device.lastHeartbeat || Date.now()).toLocaleTimeString()}
+                      <Text style={styles.lastSeenText} numberOfLines={1}>
+                        Active: {new Date(device.lastHeartbeat || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </Text>
-                      <Text style={styles.deviceIdText}>ID: {device.deviceId}</Text>
+                      <Text style={styles.deviceIdText} numberOfLines={1} ellipsizeMode="middle">
+                        ID: {device.deviceId ? device.deviceId.replace('dev_', '') : ''}
+                      </Text>
                     </View>
                   </View>
                 ))
@@ -663,7 +666,8 @@ const styles = StyleSheet.create({
   cardDeviceName: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#0F172A'
+    color: '#0F172A',
+    maxWidth: 140
   },
   onlinePill: {
     paddingHorizontal: 6,
@@ -702,15 +706,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9'
+    borderTopColor: '#F1F5F9',
+    gap: 8
   },
   lastSeenText: {
     fontSize: 10,
-    color: '#64748B'
+    color: '#64748B',
+    flex: 1
   },
   deviceIdText: {
-    fontSize: 9,
-    color: '#94A3B8'
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#94A3B8',
+    maxWidth: '45%'
   },
   searchBanner: {
     padding: 14,
@@ -829,28 +837,6 @@ const styles = StyleSheet.create({
   toggleDesc: {
     fontSize: 10,
     color: '#64748B'
-  },
-  infoBox: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 10,
-    gap: 6
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  },
-  infoKey: {
-    fontSize: 10,
-    color: '#64748B'
-  },
-  infoVal: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#0F172A'
   },
   openSimulatorBtn: {
     backgroundColor: '#000000',
