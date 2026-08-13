@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DOWNLOADS } from '../config/downloads.config';
-import { Monitor, Apple, Smartphone, ArrowDownToLine, CheckCircle2, ShieldAlert, Cpu } from 'lucide-react';
+import { Monitor, Apple, Smartphone, ArrowDownToLine, Cpu } from 'lucide-react';
 
 export default function InstallPage({ onOpenDownload }) {
   const [selectedPlatform, setSelectedPlatform] = useState('windows');
@@ -14,19 +14,19 @@ export default function InstallPage({ onOpenDownload }) {
   ];
 
   return (
-    <div className="pt-28 pb-24 min-h-screen bg-[#070A11]">
+    <div className="pt-28 pb-24 min-h-screen bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <span className="badge-glow mb-4">
-            Step-by-Step Instructions
+          <span className="badge-monochrome mb-4">
+            Installation & Pair Instructions
           </span>
-          <h1 className="text-4xl sm:text-5xl font-heading font-extrabold text-white tracking-tight">
-            Installation & Setup Guide
+          <h1 className="text-4xl sm:text-5xl font-heading font-black text-white tracking-tight">
+            How to Install DownloadPulse
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-400">
-            Follow these visual instructions to set up the DownloadPulse Desktop Agent or Mobile Application.
+            Follow the instructions below to install the Desktop Agent or Mobile Application and link your devices.
           </p>
         </div>
 
@@ -39,57 +39,57 @@ export default function InstallPage({ onOpenDownload }) {
               <button
                 key={tab.id}
                 onClick={() => setSelectedPlatform(tab.id)}
-                className={`flex items-center gap-2.5 px-6 py-3.5 rounded-2xl border font-heading font-bold text-sm transition-all ${
+                className={`flex items-center gap-2.5 px-6 py-3.5 rounded-full border font-heading font-bold text-sm transition-all ${
                   active
-                    ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-lg shadow-cyan-500/25 scale-105'
-                    : 'bg-slate-900/60 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+                    ? 'bg-white text-black border-white shadow-xl scale-105'
+                    : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
                 }`}
               >
                 <Icon className="w-5 h-5" />
                 <span>{tab.name}</span>
-                <span className="text-xs font-mono text-slate-400">({tab.ext})</span>
+                <span className="text-xs font-mono">({tab.ext})</span>
               </button>
             );
           })}
         </div>
 
-        {/* Active Platform Guide Container */}
-        <div className="glass-panel p-8 sm:p-12 max-w-5xl mx-auto border-cyan-500/30">
+        {/* Active Guide Card */}
+        <div className="luxury-card p-8 sm:p-12 max-w-5xl mx-auto border-white/20">
           
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-white/10 mb-10">
             <div>
-              <span className="badge-glow text-[10px] py-0.5 px-2.5">
+              <span className="badge-monochrome text-[10px] py-0.5 px-2.5">
                 {activeConfig.badge}
               </span>
-              <h2 className="text-2xl font-heading font-extrabold text-white mt-1">
+              <h2 className="text-2xl font-heading font-black text-white mt-1">
                 Installing {activeConfig.name}
               </h2>
-              <p className="text-xs text-slate-400 mt-1">
-                {activeConfig.platformLabel} • Installer: <code className="text-cyan-400">{activeConfig.filename}</code>
+              <p className="text-xs font-mono text-slate-400 mt-1">
+                Target File: <code className="text-white font-bold">{activeConfig.filename}</code>
               </p>
             </div>
 
             <button
               onClick={() => onOpenDownload(selectedPlatform)}
-              className="btn-primary py-3 px-6 text-sm flex items-center gap-2 shrink-0 shadow-lg shadow-cyan-500/25"
+              className="btn-luxury-white py-3 px-7 text-sm font-bold shadow-xl shrink-0"
             >
               <ArrowDownToLine className="w-4 h-4" />
               <span>Download {activeConfig.filename}</span>
             </button>
           </div>
 
-          {/* Interactive Step Cards */}
+          {/* Interactive Steps */}
           <div className="space-y-6">
             {activeConfig.installSteps.map((step, idx) => (
               <div
                 key={idx}
-                className="p-6 rounded-2xl bg-slate-900/70 border border-white/10 flex items-start gap-5 hover:border-cyan-500/40 transition-all group"
+                className="p-6 rounded-2xl bg-[#0A0A0A] border border-white/10 flex items-start gap-5 hover:border-white/40 transition-all group"
               >
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-mono font-bold text-base shrink-0 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-white text-black font-mono font-bold text-base flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                   0{idx + 1}
                 </div>
                 <div>
-                  <h3 className="text-base font-heading font-bold text-white group-hover:text-cyan-400 transition-colors">
+                  <h3 className="text-base font-heading font-bold text-white">
                     Step {idx + 1}: {step.split(' ')[0]} {step.split(' ')[1]}
                   </h3>
                   <p className="text-sm text-slate-300 mt-1 leading-relaxed">
@@ -100,11 +100,11 @@ export default function InstallPage({ onOpenDownload }) {
             ))}
           </div>
 
-          {/* Background Daemon Notice */}
-          <div className="mt-10 p-4 rounded-xl bg-cyan-950/30 border border-cyan-500/30 flex items-center gap-3 text-xs text-slate-300">
-            <Cpu className="w-5 h-5 text-cyan-400 shrink-0" />
+          {/* Silent Daemon Note */}
+          <div className="mt-10 p-4 rounded-xl bg-[#0D0D0D] border border-white/15 flex items-center gap-3 text-xs text-slate-300">
+            <Cpu className="w-5 h-5 text-white shrink-0" />
             <div>
-              <strong>Note:</strong> Once installed, DownloadPulse runs silently in the system tray / menu bar. You do not need to keep a terminal or window open.
+              <strong>Silent Background Operation:</strong> Once installed, DownloadPulse runs automatically in your system tray or menu bar. No terminal or window needs to remain open.
             </div>
           </div>
 
