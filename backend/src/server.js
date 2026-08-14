@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const { connectDB } = require('./config/db');
+const { seedHardcodedUser } = require('./config/hardcodedUser');
 
 dotenv.config();
 
@@ -31,8 +32,8 @@ const pairingLimiter = rateLimit({
   message: { success: false, error: 'Too many pairing requests. Please try again in 15 minutes.' }
 });
 
-// Initialize Database connection
-connectDB();
+// Initialize Database connection & seed hardcoded user
+connectDB().then(() => seedHardcodedUser());
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
@@ -60,10 +61,10 @@ app.use((err, req, res, next) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`========================================`);
   console.log(`  DownloadPulse Backend API Running     `);
   console.log(`========================================`);
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`Server listening on 0.0.0.0:${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
 });

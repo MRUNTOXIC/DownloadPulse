@@ -5,11 +5,15 @@ import { DownloadPackage } from '../types';
 
 interface HeaderProps {
   onOpenDownloadModal: (pkg: DownloadPackage) => void;
+  user: any;
+  onOpenAuthModal: () => void;
+  onSignOut: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenDownloadModal }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenDownloadModal, user, onOpenAuthModal, onSignOut }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur-xl bg-[#050505]/90 border-b border-white/10">
@@ -32,8 +36,55 @@ export const Header: React.FC<HeaderProps> = ({ onOpenDownloadModal }) => {
           <a href="#download" className="hover:text-white transition-colors">Downloads</a>
         </nav>
 
-        {/* Action Download Dropdown */}
+        {/* Action Buttons */}
         <div className="hidden sm:flex items-center space-x-3 relative">
+          
+          {/* User Auth Profile / Sign In Button */}
+          {user ? (
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center space-x-2 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs hover:bg-emerald-500/20 transition-all cursor-pointer"
+              >
+                <div className="w-5 h-5 rounded-full bg-emerald-500 text-black font-bold flex items-center justify-center text-[10px]">
+                  {user.name ? user.name.charAt(0) : 'U'}
+                </div>
+                <span className="font-medium max-w-[100px] truncate">{user.name}</span>
+                <ChevronDown className="w-3 h-3 opacity-60" />
+              </button>
+
+              {userMenuOpen && (
+                <div 
+                  className="absolute right-0 mt-2 w-56 bg-[#0a0a0a] border border-white/20 rounded-2xl shadow-2xl p-3 space-y-2 z-50 animate-in fade-in"
+                  onMouseLeave={() => setUserMenuOpen(false)}
+                >
+                  <div className="text-xs">
+                    <p className="font-bold text-white">{user.name}</p>
+                    <p className="text-[10px] text-zinc-400 truncate">{user.email}</p>
+                  </div>
+                  <div className="border-t border-white/10 pt-2">
+                    <button
+                      onClick={() => {
+                        onSignOut();
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full text-left text-xs text-red-400 hover:text-red-300 py-1"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={onOpenAuthModal}
+              className="px-4 py-2 rounded-full border border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-black font-semibold text-xs transition-all cursor-pointer"
+            >
+              Sign In to Download
+            </button>
+          )}
+
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}

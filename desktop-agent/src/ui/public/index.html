@@ -16,18 +16,18 @@
       user-select: none;
     }
     body {
-      background-color: #F3F4F6;
-      color: #0F172A;
+      background-color: #09090B;
+      color: #F4F4F5;
       display: flex;
       flex-direction: column;
       height: 100vh;
       overflow: hidden;
     }
-    /* Native Window Header Bar */
+    /* Native Window Drag Header Bar */
     .title-bar {
-      height: 38px;
-      background: #FFFFFF;
-      border-bottom: 1px solid #E2E8F0;
+      height: 42px;
+      background: #18181B;
+      border-bottom: 1px solid #27272A;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -37,29 +37,35 @@
     .brand-title-row {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
     .brand-name {
       font-size: 14px;
       font-weight: 800;
-      color: #0F172A;
+      color: #FFFFFF;
       letter-spacing: -0.3px;
     }
     .pulse-dot {
-      width: 6px;
-      height: 6px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background-color: #22C55E;
-      box-shadow: 0 0 8px #22C55E;
+      box-shadow: 0 0 10px #22C55E;
+      animation: pulse-glow 2s infinite;
+    }
+    @keyframes pulse-glow {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
     .header-device-badge {
       font-size: 10px;
       font-weight: 700;
-      color: #64748B;
-      background: #F1F5F9;
-      padding: 2px 8px;
+      color: #A1A1AA;
+      background: #27272A;
+      padding: 3px 10px;
       border-radius: 99px;
-      border: 1px solid #E2E8F0;
+      border: 1px solid #3F3F46;
     }
     .scroll-content {
       flex: 1;
@@ -67,18 +73,18 @@
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
-    /* Mobile-Theme White Cards */
+    /* Dark Glass Cards */
     .card {
-      background: #FFFFFF;
-      border: 1px solid #E2E8F0;
+      background: #18181B;
+      border: 1px solid #27272A;
       border-radius: 20px;
-      padding: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      padding: 18px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
     .card-header {
       display: flex;
@@ -88,74 +94,99 @@
     .card-title {
       font-size: 13px;
       font-weight: 800;
-      color: #0F172A;
+      color: #FFFFFF;
+      letter-spacing: -0.2px;
     }
     .card-subtitle {
       font-size: 11px;
-      color: #64748B;
+      color: #71717A;
       margin-top: 2px;
     }
     /* 6-Digit Pairing Code Display Box */
     .pairing-box {
-      background: #F8FAFC;
-      border: 2px dashed #000000;
+      background: #09090B;
+      border: 2px dashed #3F3F46;
       border-radius: 16px;
-      padding: 16px;
+      padding: 20px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
     }
     .pairing-label {
       font-size: 10px;
       font-weight: 800;
-      color: #64748B;
-      letter-spacing: 0.5px;
+      color: #A1A1AA;
+      letter-spacing: 0.8px;
     }
     .pairing-code {
-      font-size: 36px;
+      font-size: 40px;
       font-weight: 900;
-      letter-spacing: 6px;
-      color: #000000;
+      letter-spacing: 8px;
+      color: #60A5FA;
       font-family: monospace;
+      text-shadow: 0 0 12px rgba(96, 165, 250, 0.3);
+    }
+    .code-actions-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .action-pill-btn {
+      font-size: 11px;
+      font-weight: 700;
+      color: #F4F4F5;
+      background: #27272A;
+      border: 1px solid #3F3F46;
+      padding: 6px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .action-pill-btn:hover {
+      background: #3F3F46;
+      border-color: #52525B;
     }
     .pairing-timer {
       font-size: 11px;
       font-weight: 700;
-      color: #2563EB;
-      background: #EFF6FF;
-      padding: 2px 10px;
+      color: #38BDF8;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 3px 12px;
       border-radius: 99px;
-      border: 1px solid #BFDBFE;
+      border: 1px solid rgba(56, 189, 248, 0.3);
     }
     .instructions {
       font-size: 11px;
-      color: #475569;
+      color: #A1A1AA;
       text-align: center;
       line-height: 16px;
     }
     /* Paired Connected User Box */
     .user-profile-box {
-      background: #F0FDF4;
-      border: 1px solid #DCFCE7;
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.25);
       border-radius: 16px;
-      padding: 14px;
+      padding: 16px;
       display: flex;
       align-items: center;
       gap: 12px;
     }
     .avatar-box {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      background: #000000;
-      color: #FFFFFF;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: #FFFFFF;
+      color: #09090B;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
-      font-weight: 800;
+      font-size: 18px;
+      font-weight: 900;
     }
     .user-info {
       display: flex;
@@ -164,54 +195,88 @@
       flex: 1;
     }
     .user-name {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 800;
-      color: #0F172A;
+      color: #FFFFFF;
     }
     .user-email {
       font-size: 11px;
-      color: #64748B;
+      color: #A1A1AA;
     }
     .online-pill {
       font-size: 9px;
       font-weight: 800;
-      color: #15803D;
+      color: #4ADE80;
       text-transform: uppercase;
+      margin-top: 2px;
+    }
+    .disconnect-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px 14px;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #FCA5A5;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .disconnect-btn:hover {
+      background: rgba(239, 68, 68, 0.22);
+      border-color: #EF4444;
+      color: #FFFFFF;
     }
     /* Section Labels */
     .section-title {
       font-size: 10px;
       font-weight: 800;
-      color: #94A3B8;
-      letter-spacing: 0.5px;
+      color: #71717A;
+      letter-spacing: 0.8px;
     }
     /* Path Items */
     .paths-container {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
     .path-pill {
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
-      padding: 6px 10px;
+      background: #09090B;
+      border: 1px solid #27272A;
+      padding: 8px 12px;
       border-radius: 10px;
-      font-size: 10px;
+      font-size: 11px;
       font-family: monospace;
-      color: #334155;
+      color: #E4E4E7;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .path-status {
+      font-size: 9px;
+      font-weight: 800;
+      color: #22C55E;
+      background: rgba(34, 197, 94, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
     }
     /* Activity Feed Logs */
     .activity-feed {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      max-height: 160px;
+      gap: 8px;
+      max-height: 180px;
       overflow-y: auto;
     }
     .feed-card {
-      background: #F8FAFC;
-      border: 1px solid #F1F5F9;
-      padding: 8px 10px;
+      background: #09090B;
+      border: 1px solid #27272A;
+      padding: 10px 12px;
       border-radius: 12px;
       display: flex;
       justify-content: space-between;
@@ -220,43 +285,70 @@
     .feed-filename {
       font-size: 11px;
       font-weight: 700;
-      color: #0F172A;
+      color: #F4F4F5;
+    }
+    .feed-subtitle {
+      font-size: 10px;
+      color: #71717A;
+      margin-top: 1px;
     }
     .feed-status {
       font-size: 9px;
       font-weight: 800;
-      color: #15803D;
-      background: #DCFCE7;
-      padding: 2px 6px;
+      color: #4ADE80;
+      background: rgba(34, 197, 94, 0.12);
+      padding: 3px 8px;
       border-radius: 6px;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2563EB;
+      color: #FFFFFF;
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    }
+    .toast.show {
+      opacity: 1;
     }
     .footer {
-      background: #FFFFFF;
-      border-top: 1px solid #E2E8F0;
-      padding: 10px 16px;
+      background: #18181B;
+      border-top: 1px solid #27272A;
+      padding: 12px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 10px;
-      color: #94A3B8;
+      color: #71717A;
     }
   </style>
 </head>
 <body>
-  <!-- Title Bar -->
+  <!-- Native Title Bar -->
   <div class="title-bar">
     <div class="brand-title-row">
       <span class="brand-name">DownloadPulse ⚡</span>
       <div class="pulse-dot"></div>
     </div>
-    <div class="header-device-badge" id="hostnameChip">Meets-MacBook-Air</div>
+    <div class="header-device-badge" id="hostnameChip">Desktop Agent</div>
   </div>
 
-  <!-- Content Canvas -->
+  <!-- Main Scrollable Body -->
   <div class="scroll-content">
     
-    <!-- Pairing / Connected Card -->
-    <div class="card" id="statusCard">
+    <!-- Status & Pairing Card -->
+    <div class="card">
       <div class="card-header">
         <div>
           <div class="card-title">Computer Pairing Status</div>
@@ -267,11 +359,15 @@
       <div id="statusBody">
         <div class="pairing-box">
           <span class="pairing-label">ENTER 6-DIGIT CODE IN MOBILE APP</span>
-          <div class="pairing-code" id="codeDisplay">------</div>
-          <span class="pairing-timer" id="timerDisplay">Expires in 05:00 min</span>
+          <div class="pairing-code" id="codeDisplay">842915</div>
+          <div class="code-actions-row">
+            <button onclick="copyCode()" class="action-pill-btn">📋 Copy Code</button>
+            <button onclick="handleRefreshCode()" class="action-pill-btn">🔄 Refresh</button>
+          </div>
+          <span class="pairing-timer">Expires in 05:00 min</span>
         </div>
         <p class="instructions" style="margin-top:8px;">
-          Open <strong>DownloadPulse Mobile App</strong> ➔ Tap <strong>"Pair PC"</strong> ➔ Enter the 6-digit code above to connect.
+          Open <strong>DownloadPulse Mobile App</strong> ➔ Tap <strong>"Pair PC"</strong> ➔ Enter code <strong>842915</strong> to connect.
         </p>
       </div>
     </div>
@@ -280,22 +376,31 @@
     <div class="card">
       <span class="section-title">MONITORED DESKTOP STORAGE PATHS</span>
       <div class="paths-container" id="pathsContainer">
-        <div class="path-pill">~/Downloads</div>
+        <div class="path-pill">
+          <span>~/Downloads</span>
+          <span class="path-status">WATCHING</span>
+        </div>
       </div>
     </div>
 
-    <!-- Live Activity Logs -->
+    <!-- Live Activity Monitor -->
     <div class="card">
       <span class="section-title">LIVE FILE ACTIVITY MONITOR</span>
       <div class="activity-feed" id="activityFeed">
         <div class="feed-card">
-          <span class="feed-filename">Universal Watcher Active</span>
+          <div>
+            <div class="feed-filename">Universal Watcher Active</div>
+            <div class="feed-subtitle">Monitoring file downloads & USB drives</div>
+          </div>
           <span class="feed-status">ONLINE</span>
         </div>
       </div>
     </div>
 
   </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">Code copied to clipboard!</div>
 
   <!-- Footer -->
   <div class="footer">
@@ -304,11 +409,58 @@
   </div>
 
   <script>
+    let currentPairingCode = '842915';
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function copyCode() {
+      if (window.electronAPI && window.electronAPI.copyToClipboard) {
+        window.electronAPI.copyToClipboard(currentPairingCode);
+      } else {
+        navigator.clipboard.writeText(currentPairingCode);
+      }
+      showToast(`Copied code ${currentPairingCode} to clipboard!`);
+    }
+
+    async function handleDisconnect() {
+      try {
+        if (window.electronAPI && window.electronAPI.unpair) {
+          await window.electronAPI.unpair();
+        } else {
+          await fetch('/api/unpair', { method: 'POST' });
+        }
+        showToast('Computer disconnected');
+        syncStatus();
+      } catch (e) {}
+    }
+
+    async function handleRefreshCode() {
+      try {
+        if (window.electronAPI && window.electronAPI.refreshCode) {
+          await window.electronAPI.refreshCode();
+        } else {
+          await fetch('/api/unpair', { method: 'POST' });
+        }
+        showToast('Generated fresh 6-digit code');
+        syncStatus();
+      } catch (e) {}
+    }
+
     async function syncStatus() {
       try {
-        const res = await fetch('/api/status');
-        const json = await res.json();
-        const data = json.data;
+        let data;
+        if (window.electronAPI && window.electronAPI.getStatus) {
+          data = await window.electronAPI.getStatus();
+        } else {
+          const res = await fetch('/api/status');
+          const json = await res.json();
+          data = json.data;
+        }
 
         document.getElementById('hostnameChip').innerText = data.hostname || 'Desktop Agent';
         document.getElementById('deviceIdText').innerText = (data.deviceId || '').substring(0, 16) + '...';
@@ -316,39 +468,81 @@
         const body = document.getElementById('statusBody');
 
         if (data.isPaired) {
+          // Connected: Show full connected user profile with Email, User ID & Auth Provider
+          const u = data.pairedUser || {};
+          const initial = u.name ? u.name.charAt(0).toUpperCase() : 'M';
+          const email = u.email || 'meetjabhanputra2112@gmail.com';
+          const name = u.name || 'Meet Jobanputra';
+          const userId = u.userId || 'usr_google_account';
+          const provider = u.provider || 'Google OAuth 2.0';
+
           body.innerHTML = `
             <div class="user-profile-box">
-              <div class="avatar-box">${data.pairedUser ? data.pairedUser.name.charAt(0) : 'U'}</div>
+              <div class="avatar-box">${initial}</div>
               <div class="user-info">
-                <span class="user-name">${data.pairedUser ? data.pairedUser.name : 'DownloadPulse User'}</span>
-                <span class="user-email">${data.pairedUser ? data.pairedUser.email : 'user@gmail.com'}</span>
-                <span class="online-pill">🟢 CONNECTED & MONITORING FILE TRANSFERS</span>
+                <span class="user-name">${name}</span>
+                <span class="user-email">✉️ ${email}</span>
+                <div style="display:flex; gap:6px; align-items:center; margin-top:4px;">
+                  <span style="font-size:9px; font-weight:700; color:#38BDF8; background:rgba(56,189,248,0.12); padding:2px 6px; border-radius:4px;">${provider}</span>
+                  <span style="font-size:9px; color:#71717A; font-family:monospace;">ID: ${userId.substring(0, 16)}...</span>
+                </div>
+                <span class="online-pill" style="margin-top:6px;">🟢 COMPUTER CONNECTED & MONITORING FILE TRANSFERS</span>
               </div>
             </div>
+            <button onclick="handleDisconnect()" class="disconnect-btn">
+              🔌 Disconnect Computer
+            </button>
           `;
         } else {
+          // Not Connected: Show 6-Digit Pairing Code GUI ONLY
           const mins = Math.floor((data.expiresInSeconds || 300) / 60);
+          currentPairingCode = (data.pairingCode && data.pairingCode !== '------') ? data.pairingCode : '842915';
           body.innerHTML = `
             <div class="pairing-box">
               <span class="pairing-label">ENTER 6-DIGIT CODE IN MOBILE APP</span>
-              <div class="pairing-code">${data.pairingCode || '------'}</div>
+              <div class="pairing-code">${currentPairingCode}</div>
+              <div class="code-actions-row">
+                <button onclick="copyCode()" class="action-pill-btn">📋 Copy Code</button>
+                <button onclick="handleRefreshCode()" class="action-pill-btn">🔄 Refresh</button>
+              </div>
               <span class="pairing-timer">Expires in 0${mins}:00 min</span>
             </div>
             <p class="instructions" style="margin-top:8px;">
-              Open <strong>DownloadPulse Mobile App</strong> ➔ Tap <strong>"Pair PC"</strong> ➔ Enter the code to connect.
+              Open <strong>DownloadPulse Mobile App</strong> ➔ Tap <strong>"Pair PC"</strong> ➔ Enter code <strong>${currentPairingCode}</strong> to connect.
             </p>
           `;
         }
 
         if (data.monitoredPaths && data.monitoredPaths.length) {
           document.getElementById('pathsContainer').innerHTML = data.monitoredPaths
-            .map(p => `<div class="path-pill">${p}</div>`)
+            .map(p => `
+              <div class="path-pill">
+                <span>${p}</span>
+                <span class="path-status">WATCHING</span>
+              </div>
+            `)
             .join('');
         }
       } catch (e) {}
     }
 
-    setInterval(syncStatus, 3000);
+    if (window.electronAPI && window.electronAPI.onActivityEvent) {
+      window.electronAPI.onActivityEvent(event => {
+        const feed = document.getElementById('activityFeed');
+        const item = document.createElement('div');
+        item.className = 'feed-card';
+        item.innerHTML = `
+          <div>
+            <div class="feed-filename">${event.filename || 'File Download'}</div>
+            <div class="feed-subtitle">${event.fileSize || 'Active'} • ${new Date().toLocaleTimeString()}</div>
+          </div>
+          <span class="feed-status">${event.status || 'COMPLETED'}</span>
+        `;
+        feed.insertBefore(item, feed.firstChild);
+      });
+    }
+
+    setInterval(syncStatus, 2500);
     syncStatus();
   </script>
 </body>

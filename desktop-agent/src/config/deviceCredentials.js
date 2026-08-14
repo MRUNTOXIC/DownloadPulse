@@ -5,6 +5,10 @@ const os = require('os');
 
 const CREDENTIALS_FILE = path.join(__dirname, '../../.device_credentials.json');
 
+// Hardcoded App / Device ID
+const HARDCODED_APP_ID = process.env.DEVICE_ID || 'dev_downloadpulse_desktop_001';
+const HARDCODED_DEVICE_TOKEN = process.env.DEVICE_TOKEN || 'token_downloadpulse_secret_token_001';
+
 function getOrCreateDeviceCredentials() {
   try {
     if (fs.existsSync(CREDENTIALS_FILE)) {
@@ -16,14 +20,11 @@ function getOrCreateDeviceCredentials() {
     }
   } catch (e) {}
 
-  // Generate new persistent UUID deviceId & secret deviceToken
-  const deviceId = `dev_${crypto.randomUUID()}`;
-  const deviceToken = `token_${crypto.randomBytes(16).toString('hex')}`;
   const hostname = os.hostname();
 
   const credentials = {
-    deviceId,
-    deviceToken,
+    deviceId: HARDCODED_APP_ID,
+    deviceToken: HARDCODED_DEVICE_TOKEN,
     hostname,
     createdAt: new Date().toISOString()
   };

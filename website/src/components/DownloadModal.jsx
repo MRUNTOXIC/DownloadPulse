@@ -3,13 +3,14 @@ import { DOWNLOADS, triggerFileDownload } from '../config/downloads.config';
 import { X, ArrowDownToLine, CheckCircle2, ShieldCheck, Info } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-export default function DownloadModal({ platformId, onClose }) {
+export default function DownloadModal({ platformId, user, onClose, onOpenAuth }) {
   const config = DOWNLOADS[platformId] || DOWNLOADS.windows;
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('Initiating secure connection...');
   const [downloadCompleted, setDownloadCompleted] = useState(false);
 
   useEffect(() => {
+    if (!user) return;
     triggerFileDownload(platformId);
 
     const steps = [
@@ -37,7 +38,7 @@ export default function DownloadModal({ platformId, onClose }) {
     }, 550);
 
     return () => clearInterval(interval);
-  }, [platformId]);
+  }, [platformId, user]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200">

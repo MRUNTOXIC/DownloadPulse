@@ -8,14 +8,44 @@ import { SetupGuide } from './components/SetupGuide';
 import { Features } from './components/Features';
 import { Footer } from './components/Footer';
 import { DownloadModal } from './components/DownloadModal';
+import { AuthModal } from './components/AuthModal';
 import { DownloadPackage } from './types';
 import { Sparkles, Eye, ShieldCheck, Cpu } from 'lucide-react';
 
 export default function App() {
   const [selectedPackage, setSelectedPackage] = useState<DownloadPackage | null>(null);
+  const [user, setUser] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem('downloadpulse_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [pendingPackage, setPendingPackage] = useState<DownloadPackage | null>(null);
 
   const handleOpenDownloadModal = (pkg: DownloadPackage) => {
+    if (!user) {
+      setPendingPackage(pkg);
+      setIsAuthModalOpen(true);
+      return;
+    }
     setSelectedPackage(pkg);
+  };
+
+  const handleAuthSuccess = (loggedUser: any) => {
+    setUser(loggedUser);
+    if (pendingPackage) {
+      setSelectedPackage(pendingPackage);
+      setPendingPackage(null);
+    }
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem('downloadpulse_user');
+    localStorage.removeItem('downloadpulse_token');
+    setUser(null);
   };
 
   const handleCloseModal = () => {
@@ -25,7 +55,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans selection:bg-white selection:text-black">
       {/* Navigation Header */}
-      <Header onOpenDownloadModal={handleOpenDownloadModal} />
+      <Header
+        onOpenDownloadModal={handleOpenDownloadModal}
+        user={user}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onSignOut={handleSignOut}
+      />
 
       {/* Main Content Sections */}
       <main className="flex-1 space-y-16 lg:space-y-24 pb-20">
@@ -89,7 +124,19 @@ export default function App() {
       <Footer onOpenDownloadModal={handleOpenDownloadModal} />
 
       {/* Download Progress & Guide Modal */}
-      <DownloadModal pkg={selectedPackage} onClose={handleCloseModal} />
+      <DownloadModal
+        pkg={selectedPackage}
+        user={user}
+        onClose={handleCloseModal}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+      />
+
+      {/* Google Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }

@@ -8,11 +8,11 @@ import {
   TouchableOpacity,
   RefreshControl,
   StatusBar,
-  SafeAreaView,
   ScrollView,
   Switch,
   Platform
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Activity as ActivityIcon,
   Laptop,
@@ -37,6 +37,7 @@ import {
   fetchDevices,
   getUserAuthToken,
   setUserAuthToken,
+  loginWithGoogle,
   unpairDevice
 } from './src/services/api';
 import { setupPushNotifications } from './src/services/pushNotificationService';
@@ -48,7 +49,12 @@ export default function App() {
   const [activities, setActivities] = useState([]);
   const [devices, setDevices] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState({
+    name: 'Meet Jobanputra',
+    email: 'meetjabhanputra2112@gmail.com',
+    userId: 'usr_hardcoded_user_001',
+    provider: 'Hardcoded Default'
+  });
 
   // UI Modal States
   const [selectedActivity, setSelectedActivity] = useState(null);
@@ -88,7 +94,20 @@ export default function App() {
   }, [filterType, filterStatus, searchQuery]);
 
   useEffect(() => {
-    loadData();
+    async function initAuthAndLoad() {
+      if (!getUserAuthToken()) {
+        try {
+          const u = await loginWithGoogle(null, {
+            email: 'meetjabhanputra2112@gmail.com',
+            name: 'Meet Jobanputra',
+            id: 'usr_hardcoded_user_001'
+          });
+          setUser(u.user || u);
+        } catch (e) {}
+      }
+      loadData();
+    }
+    initAuthAndLoad();
 
     setupPushNotifications(activityId => {
       const target = activities.find(a => a.activityId === activityId);
@@ -154,10 +173,14 @@ export default function App() {
         {activeTab === 'feed' && (
           <View style={styles.screenContent}>
             <View style={styles.summaryBanner}>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.summaryTitle}>Live Activity Feed</Text>
                 <Text style={styles.summarySubtitle}>
-                  Monitoring <Text style={styles.summaryHighlight}>{devices.length} connected computer{devices.length === 1 ? '' : 's'}</Text>
+                  {devices.some(d => d.isOnline) ? (
+                    <Text style={{ color: '#15803D', fontWeight: '700' }}>🟢 Computer Connected & Online</Text>
+                  ) : (
+                    <Text style={{ color: '#DC2626', fontWeight: '700' }}>🔴 Computer Disconnected (Server Offline)</Text>
+                  )}
                 </Text>
               </View>
 
@@ -166,14 +189,20 @@ export default function App() {
                   if (!user) {
                     setShowAuthModal(true);
                   } else {
+                    loadData();
                     setShowPairingModal(true);
                   }
                 }}
-                style={styles.pairPcButton}
+                style={[
+                  styles.pairPcButton,
+                  !devices.some(d => d.isOnline) && { backgroundColor: '#2563EB' }
+                ]}
                 activeOpacity={0.8}
               >
                 <Plus size={14} color="#FFFFFF" />
-                <Text style={styles.pairPcButtonText}>Pair PC</Text>
+                <Text style={styles.pairPcButtonText}>
+                  {devices.some(d => d.isOnline) ? 'Pair PC' : 'Connect PC'}
+                </Text>
               </TouchableOpacity>
             </View>
 

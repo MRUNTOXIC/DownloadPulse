@@ -3,25 +3,38 @@ import { Platform } from 'react-native';
 import { registerPushToken } from './api';
 
 try {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true
-    })
-  });
+  if (typeof Notifications.setNotificationHandler === 'function') {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true
+      })
+    });
+  }
 } catch (e) {}
 
 export async function setupPushNotifications(onNotificationTap) {
   try {
     if (Platform.OS === 'web') return;
 
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+    let existingStatus = 'denied';
+    try {
+      const perms = await Notifications.getPermissionsAsync();
+      existingStatus = perms?.status || 'denied';
+    } catch (e) {
+      // In Expo Go, getPermissionsAsync throws SDK 53 warning — return gracefully
+      return;
+    }
 
+    let finalStatus = existingStatus;
     if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
+      try {
+        const perms = await Notifications.requestPermissionsAsync();
+        finalStatus = perms?.status || 'denied';
+      } catch (e) {
+        return;
+      }
     }
 
     if (finalStatus !== 'granted') {
@@ -35,7 +48,6 @@ export async function setupPushNotifications(onNotificationTap) {
       );
       expoPushToken = tokenData.data;
     } catch (e) {
-      // Graceful fallback for Expo Go without EAS projectId
       expoPushToken = `ExponentPushToken[local_expo_go_${Date.now()}]`;
     }
 
@@ -44,12 +56,14 @@ export async function setupPushNotifications(onNotificationTap) {
     }
 
     if (onNotificationTap) {
-      Notifications.addNotificationResponseReceivedListener(response => {
-        const data = response?.notification?.request?.content?.data;
-        if (data && data.activityId) {
-          onNotificationTap(data.activityId);
-        }
-      });
+      try {
+        Notifications.addNotificationResponseReceivedListener(response => {
+          const data = response?.notification?.request?.content?.data;
+          if (data && data.activityId) {
+            onNotificationTap(data.activityId);
+          }
+        });
+      } catch (e) {}
     }
 
     return expoPushToken;

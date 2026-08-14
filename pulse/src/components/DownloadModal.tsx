@@ -4,18 +4,38 @@ import { DownloadPackage } from '../types';
 
 interface DownloadModalProps {
   pkg: DownloadPackage | null;
+  user: any;
   onClose: () => void;
+  onOpenAuth: () => void;
 }
 
-export const DownloadModal: React.FC<DownloadModalProps> = ({ pkg, onClose }) => {
+export const DownloadModal: React.FC<DownloadModalProps> = ({ pkg, user, onClose, onOpenAuth }) => {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadComplete, setDownloadComplete] = useState(false);
   const [copiedStep, setCopiedStep] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!pkg) return;
+    if (!pkg || !user) return;
     setDownloadProgress(0);
     setDownloadComplete(false);
+
+    // Trigger real file download from /downloads/
+    const filenameMap: Record<string, string> = {
+      mac: 'DownloadPulse.dmg',
+      windows: 'DownloadPulse-Setup.exe',
+      android: 'DownloadPulse.apk',
+      linux: 'DownloadPulse.AppImage'
+    };
+
+    const targetFilename = filenameMap[pkg.id] || pkg.filename;
+    const downloadUrl = `/downloads/${targetFilename}`;
+
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = targetFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
     const interval = setInterval(() => {
       setDownloadProgress((prev) => {
@@ -24,12 +44,12 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ pkg, onClose }) =>
           clearInterval(interval);
           return 100;
         }
-        return prev + 15;
+        return prev + 25;
       });
     }, 120);
 
     return () => clearInterval(interval);
-  }, [pkg]);
+  }, [pkg, user]);
 
   if (!pkg) return null;
 

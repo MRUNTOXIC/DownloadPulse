@@ -16,6 +16,10 @@ const pairingSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  rawCode: {
+    type: String,
+    default: null
+  },
   userId: {
     type: String,
     default: null,

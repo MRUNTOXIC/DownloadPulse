@@ -6,8 +6,12 @@
   "scripts": {
     "start": "node start-all.js",
     "dev": "node start-all.js",
+    "ios": "cd mobile && npx expo start --ios",
+    "android": "cd mobile && npx expo start --android",
+    "mobile:web": "cd mobile && npx expo start --web",
     "website": "cd website && npm run dev",
-    "simulate-activity": "cd desktop-agent && npm run simulate-activity"
+    "simulate-activity": "cd desktop-agent && npm run simulate-activity",
+    "test-pairing": "node test-pairing.js"
   },
   "keywords": [
     "downloadpulse",

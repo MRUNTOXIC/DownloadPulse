@@ -10,7 +10,9 @@ router.get('/status', pairingController.getPairingStatus);
 // Authenticated Mobile app verify 6-digit code endpoint
 router.post('/verify', authMiddleware, pairingController.verifyPairingCode);
 
-// Unpair device
+// Unpair & Disconnect device
 router.delete('/:deviceId/pair', authMiddleware, pairingController.unpairDevice);
+router.post('/unpair/:deviceId', pairingController.disconnectDevice);
+router.post('/disconnect/:deviceId', pairingController.disconnectDevice);
 
 module.exports = router;

@@ -52,7 +52,7 @@ async function googleAuth(req, res) {
     }
 
     const normalizedEmail = googleUser.email.toLowerCase().trim();
-    const userId = `usr_${googleUser.sub}`;
+    const userId = googleUser.sub.startsWith('usr_') ? googleUser.sub : `usr_${googleUser.sub}`;
 
     let userRecord;
     try {

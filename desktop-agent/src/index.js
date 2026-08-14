@@ -1,3 +1,37 @@
+if (process.stdout && process.stdout.on) {
+  process.stdout.on('error', (err) => {
+    if (err.code === 'EPIPE') return;
+  });
+}
+if (process.stderr && process.stderr.on) {
+  process.stderr.on('error', (err) => {
+    if (err.code === 'EPIPE') return;
+  });
+}
+
+// Safe console logger override for Electron process output
+const originalLog = console.log;
+const originalError = console.error;
+const originalWarn = console.warn;
+
+console.log = function (...args) {
+  try {
+    originalLog.apply(console, args);
+  } catch (e) {}
+};
+
+console.error = function (...args) {
+  try {
+    originalError.apply(console, args);
+  } catch (e) {}
+};
+
+console.warn = function (...args) {
+  try {
+    originalWarn.apply(console, args);
+  } catch (e) {}
+};
+
 const axios = require('axios');
 const config = require('./config/config');
 const UniversalFileWatcher = require('./watcher/downloadWatcher');
@@ -14,8 +48,6 @@ console.log(`[Config] Backend API: ${config.backendUrl}`);
 
 // Start Desktop App UI Server (accessible via browser window at http://localhost:5002)
 startDesktopUIServer();
-
-let lastState = null;
 
 function renderPairingBox(code, expiresInSeconds = 300) {
   const mins = Math.floor(expiresInSeconds / 60);
@@ -34,19 +66,22 @@ function renderPairingBox(code, expiresInSeconds = 300) {
 }
 
 function renderPairedUserBox(userName, userEmail) {
-  console.log(`\n┌────────────────────────────────────────────────────────┐`);
-  console.log(`│                  ⚡ DOWNLOADPULSE ⚡                   │`);
-  console.log(`│                   COMPUTER CONNECTED                   │`);
-  console.log(`│                                                        │`);
-  console.log(`│     Paired User: ${userName || 'DownloadPulse User'}`);
-  console.log(`│     Email: ${userEmail || 'user@gmail.com'}`);
-  console.log(`│     Status: 🟢 ONLINE & MONITORING FILE TRANSFERS      │`);
-  console.log(`└────────────────────────────────────────────────────────┘\n`);
+  console.log(`\n\x1b[32m┌────────────────────────────────────────────────────────┐\x1b[0m`);
+  console.log(`\x1b[32m│                  ⚡ DOWNLOADPULSE ⚡                   │\x1b[0m`);
+  console.log(`\x1b[32m│          ✅ PC READ PAIRING STATUS: CONNECTED          │\x1b[0m`);
+  console.log(`\x1b[32m│                                                        │\x1b[0m`);
+  console.log(`\x1b[32m│     Paired User: ${userName || 'Meet Jobanputra'}\x1b[0m`);
+  console.log(`\x1b[32m│     Email: ${userEmail || 'meetjabhanputra2112@gmail.com'}\x1b[0m`);
+  console.log(`\x1b[32m│     Status: 🟢 ONLINE & MONITORING FILE TRANSFERS      │\x1b[0m`);
+  console.log(`\x1b[32m└────────────────────────────────────────────────────────┘\x1b[0m\n`);
 }
 
 /**
  * Checks real-time pairing status with backend database
  */
+let lastState = null;
+let lastPairingCode = null;
+
 async function checkPairingStatus() {
   try {
     const response = await axios.get(`${config.backendUrl}/pairing/status`, {
@@ -64,9 +99,10 @@ async function checkPairingStatus() {
           renderPairedUserBox(data.pairedUser?.name, data.pairedUser?.email);
         }
       } else {
-        if (lastState !== 'UNPAIRED' || data.pairingCode) {
+        if (lastState !== 'UNPAIRED' || lastPairingCode !== data.pairingCode) {
           lastState = 'UNPAIRED';
-          renderPairingBox(data.pairingCode || '872842', data.expiresInSeconds || 300);
+          lastPairingCode = data.pairingCode;
+          renderPairingBox(data.pairingCode, data.expiresInSeconds || 300);
         }
       }
     }
@@ -84,6 +120,15 @@ watcher.on('activity-changed', (activityEvent) => {
   if (['COMPLETED', 'FAILED', 'STALLED'].includes(activityEvent.status)) {
     notificationManager.sendNotification(activityEvent);
   }
+
+  // Broadcast event to Electron Window if running in Electron process
+  try {
+    const { BrowserWindow } = require('electron');
+    const windows = BrowserWindow.getAllWindows();
+    if (windows && windows.length > 0) {
+      windows[0].webContents.send('activity-event', activityEvent);
+    }
+  } catch (e) {}
 
   console.log(`[EVENT -> BACKEND] [${activityEvent.status}] ${activityEvent.filename} (${activityEvent.fileSize})`);
 });
